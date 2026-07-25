@@ -1,0 +1,117 @@
+# Adaptive ML Framework - Default Configuration
+# This file contains sensible defaults for continual learning with catastrophic forgetting prevention
+
+# Model configuration
+model:
+  base_model: "sshleifer/tiny-gpt2"  # Default for testing; use "mistralai/Mistral-7B" for production
+  tokenizer: null  # If null, uses base_model's tokenizer
+  dtype: "float32"  # "float32", "float16", "bfloat16"
+  device_map: null  # For multi-GPU: {"": "0"} or {"model.layers.0": "0", "model.layers.1": "1"}
+
+# Training configuration
+training:
+  batch_size: 32
+  learning_rate: 1e-4
+  num_epochs: 3
+  max_steps: null
+  gradient_accumulation_steps: 1
+  warmup_steps: 100
+  weight_decay: 0.01
+  
+  # Continual learning specific
+  ewc_lambda: 1000.0  # EWC regularization strength (higher = more protection)
+  distill_alpha: 0.5  # Knowledge distillation weight (0-1)
+  replay_ratio: 0.3  # Fraction of batch from replay buffer (0-1)
+  
+  # Optimization
+  optimizer: "adamw"  # "adamw", "adam", "sgd"
+  scheduler: "cosine"  # "cosine", "linear", "constant"
+  mixed_precision: "bf16"  # "no", "fp16", "bf16"
+  device: "cuda"  # "cuda", "cpu", "mps"
+
+# Adapter configuration (LoRA/QLoRA)
+adapters:
+  adapter_type: "lora"  # "lora", "qlora", "adapter", "prefix", "ia3"
+  r: 16  # Rank for LoRA
+  lora_alpha: 32  # Scaling factor for LoRA
+  lora_dropout: 0.05
+  target_modules: ["q_proj", "v_proj"]  # Modules to apply LoRA to
+  task_type: "CAUSAL_LM"  # For PEFT: "CAUSAL_LM", "SEQ_CLS", etc.
+  
+  # QLoRA specific
+  bits: 4  # Quantization bits (4, 8)
+  double_quant: true
+  
+  # Adapter routing
+  use_router: true
+  router_type: "domain"  # "domain", "task", "hybrid"
+
+# Memory configuration (Replay Buffer)
+memory:
+  buffer_size: 10000  # Maximum number of examples to store
+  sampling_strategy: "balanced"  # "uniform", "balanced", "importance", "diversity", "hard_example"
+  
+  # Diversity sampling (FAISS)
+  diversity_metric: "cosine"  # "cosine", "euclidean", "dot"
+  diversity_threshold: 0.5
+  
+  # Importance sampling
+  importance_metric: "uncertainty"  # "uncertainty", "loss", "custom"
+  
+  # Reservoir sampling
+  use_reservoir: true
+
+# Drift detection configuration
+drift:
+  window_size: 1000  # Size of sliding window for drift detection
+  reference_size: 1000  # Size of reference dataset
+  
+  # Statistical drift
+  statistical_test: "ks"  # "ks" (Kolmogorov-Smirnov), "psi" (Population Stability Index), "wasserstein"
+  statistical_threshold: 0.05
+  
+  # Semantic drift
+  semantic_threshold: 0.15
+  embedding_model: "sentence-transformers/all-mpnet-base-v2"  # Model for embedding-based drift
+  
+  # Concept drift (both statistical and semantic)
+  concept_threshold: 0.1
+
+# Evaluation configuration
+evaluation:
+  promotion_strategy: "strict"  # "strict", "balanced", "aggressive"
+  retention_threshold: 0.95  # Minimum retention score for promotion (0-1)
+  new_task_threshold: 0.1  # Minimum improvement on new tasks (0-1)
+  
+  # Retention score weights (must sum to 1.0)
+  new_score_weight: 0.4
+  old_score_weight: 0.4
+  forgetting_penalty_weight: 0.2
+  
+  # A/B testing
+  ab_test_ratio: 0.1  # Fraction of traffic for A/B test (0-1)
+  ab_test_duration: "1h"  # Duration for A/B test (e.g., "1h", "24h", "7d")
+
+# Registry configuration (Model Versioning)
+registry:
+  registry_path: "./model_registry"  # Directory to store models
+  max_versions: 10  # Maximum number of versions to keep
+  auto_archive: true  # Automatically archive old versions
+  
+  # ONNX export
+  export_onnx: true
+  onnx_opset: 14
+
+# Project metadata
+project_name: "adaptive_ml"
+experiment_name: "default"
+run_id: null
+
+# Logging
+log_level: "INFO"  # "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"
+log_dir: "./logs"
+
+# MLflow tracking
+use_mlflow: true
+mlflow_tracking_uri: "./mlruns"
+mlflow_experiment_name: null
