@@ -1,0 +1,36 @@
+# Qwen2.5-Omni-3B Model Configuration
+# Adaptive Qwen Omni - Continual Learning Framework
+
+model:
+  base_model: "Qwen/Qwen2.5-Omni-3B"
+  model_type: "qwen2.5-omni"
+  
+  # Thinker-Talker architecture
+  use_thinker: true
+  use_talker: true
+  
+  # Quantization (for QLoRA)
+  quantize: false
+  quantization_bits: 4
+  quantization_method: "bitsandbytes"
+  
+  # Device configuration
+  device: "cuda"
+  device_map: null  # auto-detect
+  
+  # Memory optimization
+  use_flash_attention: true
+  use_bfloat16: true
+  
+  # Modality support
+  supported_modalities:
+    - "text"
+    - "vision"
+    - "audio"
+    - "video"
+    - "speech"
+    - "multi_modal"
+  
+  # Memory requirements
+  min_memory_gb: 18.0
+  recommended_memory_gb: 24.0

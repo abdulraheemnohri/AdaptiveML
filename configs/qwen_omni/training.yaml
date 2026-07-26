@@ -1,0 +1,98 @@
+# Qwen2.5-Omni-3B Training Configuration
+# Adaptive Qwen Omni - Continual Learning Framework
+
+training:
+  # Training parameters
+  learning_rate: 2e-5
+  batch_size: 4
+  gradient_accumulation_steps: 4
+  num_epochs: 3
+  max_steps: 1000
+  warmup_steps: 100
+  
+  # LoRA configuration
+  use_lora: true
+  lora_rank: 8
+  lora_alpha: 16.0
+  lora_dropout: 0.05
+  lora_target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+  
+  # QLoRA configuration
+  use_qlora: false
+  quantization_bits: 4
+  
+  # Dynamic LoRA
+  use_dynamic_lora: true
+  min_rank: 4
+  max_rank: 32
+  rank_growth_rate: 1.5
+  rank_shrink_threshold: 0.8
+  rank_growth_threshold: 0.9
+  
+  # Parameter importance (catastrophic forgetting prevention)
+  use_ewc: true
+  ewc_lambda: 0.1
+  use_mas: true
+  mas_lambda: 0.1
+  use_si: true
+  si_lambda: 0.1
+  use_fisher: false
+  
+  # Knowledge distillation
+  use_distillation: true
+  distillation_temperature: 2.0
+  distillation_weight: 0.5
+  
+  # Replay configuration
+  use_replay: true
+  replay_ratio: 0.3
+  replay_batch_size: 4
+  
+  # Adaptation level
+  adaptation_level: "safe"  # or "core"
+  
+  # Checkpointing
+  save_checkpoints: true
+  checkpoint_interval: 500
+  max_checkpoints: 5
+
+adapters:
+  # Default adapters
+  default_adapters:
+    - "general"
+    - "coding"
+    - "urdu"
+    - "english"
+    - "vision"
+    - "audio"
+    - "video"
+    - "speech"
+    - "math"
+  
+  # Adapter settings
+  adapter_rank: 8
+  adapter_alpha: 16.0
+  adapter_dropout: 0.05
+  
+  # Dynamic adapter creation
+  create_new_adapters: true
+  adapter_creation_threshold: 0.7
+  
+  # Adapter routing
+  use_router: true
+  router_type: "hierarchical"  # task_based, modality_based, domain_based, hybrid
+  
+  # Adapter merging (Level 2 adaptation)
+  enable_adapter_merging: true
+  merge_threshold: 0.95
+  merge_interval: 1000
+  
+  # Domain-specific adapters
+  domain_adapters: {}

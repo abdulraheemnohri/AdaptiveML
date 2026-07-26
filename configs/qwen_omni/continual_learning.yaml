@@ -1,0 +1,135 @@
+# Qwen2.5-Omni-3B Continual Learning Configuration
+# Adaptive Qwen Omni - Continual Learning Framework
+
+memory:
+  # Memory size
+  max_entries: 10000
+  max_entries_per_modality:
+    text: 3000
+    vision: 2000
+    audio: 2000
+    video: 1500
+    speech: 1500
+    multi_modal: 1000
+  max_entries_per_domain: 1000
+  
+  # Sampling
+  sampling_strategy: "priority_based"  # uniform, balanced, priority, adaptive
+  temperature: 1.0
+  
+  # Priority weights
+  importance_weight: 0.5
+  novelty_weight: 0.3
+  difficulty_weight: 0.2
+  forgetting_risk_weight: 2.0
+  error_rate_weight: 1.5
+  
+  # Memory compression
+  use_compression: true
+  compression_method: "faiss_ivf_pq"
+  nlist: 100
+  nprobe: 10
+  m: 8
+  nbits: 8
+  
+  # Novelty detection
+  novelty_threshold: 0.5
+
+drift:
+  # Drift detection methods
+  use_statistical: true
+  use_semantic: true
+  use_clip: true
+  
+  # CLIP configuration
+  clip_model: "ViT-B/32"
+  clip_threshold: 0.85
+  
+  # Statistical methods
+  statistical_methods:
+    - "ks"
+    - "psi"
+    - "wasserstein"
+    - "pca"
+  statistical_threshold: 0.05
+  
+  # Modality-specific drift
+  detect_by_modality: true
+  modality_weights:
+    text: 1.0
+    vision: 1.0
+    audio: 1.0
+    video: 1.0
+    speech: 1.0
+  
+  # Forgetting detection
+  forgetting_strategy: "modality_specific"  # performance_drop, modality_specific, weighted_average, regression_testing, benchmark_comparison, adaptive_threshold
+  forgetting_threshold: 0.03  # 3% performance drop
+  critical_modality_threshold: 0.05  # 5% for critical modalities
+
+evaluation:
+  # Evaluation frequency
+  eval_interval: 100
+  eval_batch_size: 8
+  
+  # Metrics
+  use_perplexity: true
+  use_bleu: true
+  use_rouge: true
+  use_f1: true
+  
+  # Modality-specific evaluation
+  evaluate_text: true
+  evaluate_vision: true
+  evaluate_audio: true
+  evaluate_video: true
+  evaluate_speech: true
+  
+  # Benchmark datasets
+  text_benchmark: "mmlu"
+  vision_benchmark: "mmmu"
+  audio_benchmark: "librispeech"
+  video_benchmark: "msrvtt"
+  
+  # Retention scoring
+  retention_weights:
+    text: 0.3
+    vision: 0.2
+    audio: 0.2
+    video: 0.2
+    speech: 0.1
+  
+  # Promotion criteria
+  min_improvement: 0.05  # 5% improvement required
+  max_forgetting: 0.03  # 3% max forgetting allowed
+  min_retention: 0.98  # 98% retention required
+
+registry:
+  registry_path: "./registry"
+  model_storage_path: "./models"
+  adapter_storage_path: "./adapters"
+  
+  # Versioning
+  version_format: "{base}-{timestamp}-{hash}"
+  max_versions: 10
+  
+  # Rollback
+  enable_rollback: true
+  rollback_window: 5
+  
+  # Export
+  export_onnx: true
+  onnx_opset: 14
+  
+  # MLflow integration
+  use_mlflow: true
+  mlflow_tracking_uri: "./mlruns"
+
+# Project metadata
+project_name: "adaptive_qwen_omni"
+experiment_name: "default"
+run_id: null
+
+# Logging
+log_level: "INFO"
+log_dir: "./logs"
