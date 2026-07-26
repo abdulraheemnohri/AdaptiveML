@@ -1,14 +1,21 @@
 # Adaptive ML Framework - Default Configuration
-# This file contains sensible defaults for continual learning with catastrophic forgetting prevention
+# Multi-modal continual learning with Qwen2.5-Omni-3B
 
-# Model configuration
 model:
-  base_model: "sshleifer/tiny-gpt2"  # Default for testing; use "mistralai/Mistral-7B" for production
-  tokenizer: null  # If null, uses base_model's tokenizer
-  dtype: "float32"  # "float32", "float16", "bfloat16"
-  device_map: null  # For multi-GPU: {"": "0"} or {"model.layers.0": "0", "model.layers.1": "1"}
+  base_model: "Qwen/Qwen2.5-Omni-3B"
+  tokenizer: null  # Uses base_model's tokenizer if null
+  dtype: "bfloat16"
+  device_map: null  # Auto-detect for multi-GPU
+  
+  # Multi-modal settings
+  modality: "multi_modal"  # text, vision, audio, multi_modal
+  vision_encoder: null  # Custom vision encoder (optional)
+  audio_encoder: null  # Custom audio encoder (optional)
+  
+  # Quantization for large models
+  quantize: true
+  quantization_bits: 4  # 4, 8, or null for no quantization
 
-# Training configuration
 training:
   batch_size: 32
   learning_rate: 1e-4
@@ -19,99 +26,135 @@ training:
   weight_decay: 0.01
   
   # Continual learning specific
-  ewc_lambda: 1000.0  # EWC regularization strength (higher = more protection)
-  distill_alpha: 0.5  # Knowledge distillation weight (0-1)
-  replay_ratio: 0.3  # Fraction of batch from replay buffer (0-1)
+  ewc_lambda: 1000.0  # EWC regularization strength
+  mas_lambda: 100.0  # MAS regularization strength
+  si_lambda: 100.0  # SI regularization strength
+  distill_alpha: 0.5  # Knowledge distillation weight
+  replay_ratio: 0.3  # Fraction of batch from replay buffer
+  
+  # Parameter importance method
+  importance_method: "ewc"  # ewc, mas, si, fisher, gradient
+  
+  # Dynamic architecture
+  dynamic_lora: true  # Enable dynamic LoRA rank adaptation
+  lora_rank_range: [8, 64]  # Min and max LoRA rank
+  lora_growth_rate: 1.1  # Rank growth multiplier
   
   # Optimization
-  optimizer: "adamw"  # "adamw", "adam", "sgd"
-  scheduler: "cosine"  # "cosine", "linear", "constant"
-  mixed_precision: "bf16"  # "no", "fp16", "bf16"
-  device: "cuda"  # "cuda", "cpu", "mps"
+  optimizer: "adamw"
+  scheduler: "cosine"
+  mixed_precision: "bf16"  # no, fp16, bf16
+  
+  # Device
+  device: "auto"  # auto, cuda, cpu
 
-# Adapter configuration (LoRA/QLoRA)
 adapters:
-  adapter_type: "lora"  # "lora", "qlora", "adapter", "prefix", "ia3"
+  adapter_type: "lora"  # lora, qlora, adapter, prefix, ia3
   r: 16  # Rank for LoRA
   lora_alpha: 32  # Scaling factor for LoRA
   lora_dropout: 0.05
-  target_modules: ["q_proj", "v_proj"]  # Modules to apply LoRA to
-  task_type: "CAUSAL_LM"  # For PEFT: "CAUSAL_LM", "SEQ_CLS", etc.
+  target_modules: ["q_proj", "v_proj"]
+  task_type: "CAUSAL_LM"
   
   # QLoRA specific
-  bits: 4  # Quantization bits (4, 8)
+  bits: 4  # Quantization bits
   double_quant: true
   
   # Adapter routing
   use_router: true
-  router_type: "domain"  # "domain", "task", "hybrid"
-
-# Memory configuration (Replay Buffer)
-memory:
-  buffer_size: 10000  # Maximum number of examples to store
-  sampling_strategy: "balanced"  # "uniform", "balanced", "importance", "diversity", "hard_example"
+  router_type: "domain"  # domain, task, hybrid
   
-  # Diversity sampling (FAISS)
-  diversity_metric: "cosine"  # "cosine", "euclidean", "dot"
+  # Dynamic LoRA
+  dynamic_rank: true  # Enable dynamic rank adaptation
+  min_rank: 8  # Minimum LoRA rank
+  max_rank: 64  # Maximum LoRA rank
+  rank_growth_rate: 1.1  # Multiplier for rank growth
+  rank_shrink_threshold: 0.8  # Accuracy threshold to shrink rank
+  
+  # Multi-modal adapters
+  use_vision_adapter: true  # Use adapter for vision modality
+  use_audio_adapter: true  # Use adapter for audio modality
+  vision_adapter_type: "lora"  # Adapter type for vision
+  audio_adapter_type: "lora"  # Adapter type for audio
+
+memory:
+  buffer_size: 10000
+  sampling_strategy: "balanced"  # uniform, balanced, importance, diversity, hard_example
+  
+  # Diversity sampling
+  diversity_metric: "cosine"  # cosine, euclidean, dot
   diversity_threshold: 0.5
   
   # Importance sampling
-  importance_metric: "uncertainty"  # "uncertainty", "loss", "custom"
+  importance_metric: "uncertainty"  # uncertainty, loss, custom
   
   # Reservoir sampling
   use_reservoir: true
+  
+  # Memory compression (for large buffers)
+  use_compression: true
+  compression_method: "ivf"  # ivf, pq, ivf_pq, hnsw
+  nlist: 100  # Number of IVF clusters
+  nprobe: 10  # Number of probes for IVF
+  m: 8  # PQ codebook size
+  nbits: 8  # PQ quantization bits
 
-# Drift detection configuration
 drift:
-  window_size: 1000  # Size of sliding window for drift detection
-  reference_size: 1000  # Size of reference dataset
+  window_size: 1000
+  reference_size: 1000
   
   # Statistical drift
-  statistical_test: "ks"  # "ks" (Kolmogorov-Smirnov), "psi" (Population Stability Index), "wasserstein"
+  statistical_test: "ks"  # ks, psi, wasserstein
   statistical_threshold: 0.05
   
   # Semantic drift
   semantic_threshold: 0.15
-  embedding_model: "sentence-transformers/all-mpnet-base-v2"  # Model for embedding-based drift
+  embedding_model: "sentence-transformers/all-mpnet-base-v2"
   
-  # Concept drift (both statistical and semantic)
+  # Multi-modal semantic drift
+  use_clip: true  # Use CLIP for image-text drift detection
+  clip_model: "openai/clip-vit-base-patch32"  # CLIP model for multi-modal
+  clip_threshold: 0.2  # Threshold for CLIP-based drift
+  
+  # Concept drift
   concept_threshold: 0.1
-
-# Evaluation configuration
-evaluation:
-  promotion_strategy: "strict"  # "strict", "balanced", "aggressive"
-  retention_threshold: 0.95  # Minimum retention score for promotion (0-1)
-  new_task_threshold: 0.1  # Minimum improvement on new tasks (0-1)
   
-  # Retention score weights (must sum to 1.0)
+  # Advanced drift detection
+  use_ensemble: true  # Combine multiple drift detection methods
+  ensemble_weights:
+    statistical: 0.4
+    semantic: 0.3
+    clip: 0.3
+
+evaluation:
+  promotion_strategy: "strict"  # strict, balanced, aggressive
+  retention_threshold: 0.95  # Minimum retention score for promotion
+  new_task_threshold: 0.1  # Minimum improvement on new tasks
+  
+  # Retention score weights
   new_score_weight: 0.4
   old_score_weight: 0.4
   forgetting_penalty_weight: 0.2
   
   # A/B testing
-  ab_test_ratio: 0.1  # Fraction of traffic for A/B test (0-1)
-  ab_test_duration: "1h"  # Duration for A/B test (e.g., "1h", "24h", "7d")
+  ab_test_ratio: 0.1  # Fraction of traffic for A/B test
+  ab_test_duration: "1h"  # Duration for A/B test
+  
+  # Advanced evaluation metrics
+  use_perplexity: true  # Calculate perplexity for language tasks
+  use_bleu: true  # Calculate BLEU score for text generation
+  use_rouge: true  # Calculate ROUGE score for text generation
+  use_f1: true  # Calculate F1 score for classification
+  
+  # Multi-modal evaluation
+  use_vision_metrics: true  # Calculate vision-specific metrics
+  use_audio_metrics: true  # Calculate audio-specific metrics
 
-# Registry configuration (Model Versioning)
 registry:
-  registry_path: "./model_registry"  # Directory to store models
+  registry_path: "./model_registry"
   max_versions: 10  # Maximum number of versions to keep
-  auto_archive: true  # Automatically archive old versions
+  auto_archive: true
   
   # ONNX export
   export_onnx: true
   onnx_opset: 14
-
-# Project metadata
-project_name: "adaptive_ml"
-experiment_name: "default"
-run_id: null
-
-# Logging
-log_level: "INFO"  # "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"
-log_dir: "./logs"
-
-# MLflow tracking
-use_mlflow: true
-mlflow_tracking_uri: "./mlruns"
-mlflow_experiment_name: null
