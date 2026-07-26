@@ -1,12 +1,103 @@
+# Adaptive Omni ML Platform - Git Ignore
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
 # Python
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Node
-node_modules/
-
-# OS
-.DS_Store
-
-# Environment
+# Virtual environments
 .env
+.venv
+env/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+adaptive_omni.db
+
+# Logs
+*.log
+logs/
+
+# Models
+models/
+*.bin
+*.pth
+*.pt
+*.safetensors
+*.h5
+*.tflite
+*.onnx
+
+# Training output
+training_output/
+
+# Data storage
+data/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Frontend build
+dist/
+build/
+.cache/
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Temporary files
+*.tmp
+*.temp
+.cache
