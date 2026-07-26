@@ -1,0 +1,82 @@
+# Core Framework
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# Database
+sqlalchemy==2.0.25
+alembic==1.13.1
+psycopg2-binary==2.9.9
+aiosqlite==0.19.0
+
+# ML & AI
+transformers==4.38.2
+peft==0.8.2
+accelerate==0.27.0
+bitsandbytes==0.41.3
+sentencepiece==0.1.99
+protobuf==4.25.3
+torch==2.1.2
+
+# Vector Database
+faqiss-cpu==1.7.4
+qdrant-client==1.8.0
+
+# Data Processing
+pandas==2.1.4
+numpy==1.26.2
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# Web Scraping & Data Collection
+beautifulsoup4==4.12.2
+httpx==0.26.0
+feedparser==6.0.10
+pytube==15.0.0
+PyPDF2==3.0.1
+python-docx==1.1.0
+openpyxl==3.1.2
+
+# Audio/Video Processing
+pydub==0.25.1
+ffmpeg-python==0.2.0
+whisper==1.1.10
+
+# Image Processing
+Pillow==10.1.0
+opencv-python==4.8.1.78
+
+# Async & Background Tasks
+celery==5.3.6
+redis==5.0.1
+flower==2.0.1
+
+# API Clients
+github3.py==4.0.1
+
+# Monitoring
+prometheus-client==0.19.0
+
+# Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Utilities
+python-dotenv==1.0.0
+pytz==2024.1
+aiofiles==23.2.1
+
+# Testing
+pytest==7.4.4
+pytest-asyncio==0.23.3
+httpx==0.26.0
+
+# Type Checking
+mypy==1.8.0
+
+# Code Formatting
+black==24.1.1
+isort==15.13.2
+
+# Linting
+ruff==0.1.14
