@@ -5,7 +5,7 @@ Intelligently routes requests to appropriate adapters based on task, domain, and
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from adaptive_ml.qwen_omni.core import (
     AdapterInfo,
@@ -110,6 +110,7 @@ class RoutingDecision:
     confidence: float
     explanation: str
     is_multi_adapter: bool = False
+    modality: ModalityType = ModalityType.TEXT
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -118,6 +119,7 @@ class RoutingDecision:
             "confidence": self.confidence,
             "explanation": self.explanation,
             "is_multi_adapter": self.is_multi_adapter,
+            "modality": self.modality.value,
         }
 
 
@@ -131,6 +133,17 @@ class AdaptiveRouter:
         self.config = config or RouterConfig()
         self._available_adapters: Set[AdapterType] = set()
         
+    def detect_modality(self, data: MultimodalData) -> ModalityType:
+        """Detect the overall/primary modality of the input data."""
+        if not data.modalities:
+            return ModalityType.TEXT
+        if ModalityType.MULTI_MODAL in data.modalities:
+            return ModalityType.MULTI_MODAL
+        # Otherwise, return the first modality or MULTI_MODAL if more than one
+        if len(data.modalities) > 1:
+            return ModalityType.MULTI_MODAL
+        return data.modalities[0]
+
     def register_adapter(self, adapter_type: AdapterType) -> None:
         """Register an adapter as available."""
         self._available_adapters.add(adapter_type)
@@ -239,8 +252,8 @@ class AdaptiveRouter:
     def route(
         self,
         data: MultimodalData,
-        task_result: Optional[TaskClassificationResult] = None,
-        domain_result: Optional[DomainClassificationResult] = None,
+        task_result: Optional[Union[TaskClassificationResult, str]] = None,
+        domain_result: Optional[Union[DomainClassificationResult, str]] = None,
         instruction: Optional[str] = None
     ) -> RoutingDecision:
         """
@@ -255,6 +268,15 @@ class AdaptiveRouter:
         Returns:
             RoutingDecision with selected adapters
         """
+        # Handle positional string arguments gracefully (e.g. from tests)
+        if isinstance(task_result, str):
+            instruction = task_result
+            task_result = None
+
+        if isinstance(domain_result, str):
+            instruction = domain_result
+            domain_result = None
+
         # Classify if not provided
         if task_result is None:
             from adaptive_ml.qwen_omni.adaptive.detectors import TaskDetector
@@ -298,13 +320,15 @@ class AdaptiveRouter:
         explanation = f"Routed based on {', '.join(explanation_parts)}" if explanation_parts else "Default routing"
         
         is_multi_adapter = len(adapters) > 1
+        modality = self.detect_modality(data)
         
         return RoutingDecision(
             adapters=adapters,
             primary_adapter=primary_adapter,
             confidence=confidence,
             explanation=explanation,
-            is_multi_adapter=is_multi_adapter
+            is_multi_adapter=is_multi_adapter,
+            modality=modality
         )
     
     def route_by_task(self, task_type: TaskType) -> RoutingDecision:
