@@ -50,6 +50,7 @@ class DomainClassificationResult:
     sub_domains: List[DomainType] = field(default_factory=list)
     sub_confidences: List[float] = field(default_factory=list)
     language: str = "en"
+    explanation: str = ""
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -58,6 +59,7 @@ class DomainClassificationResult:
             "sub_domains": [d.value for d in self.sub_domains],
             "sub_confidences": self.sub_confidences,
             "language": self.language,
+            "explanation": self.explanation,
         }
 
 
@@ -94,6 +96,25 @@ class TaskDetector:
         self._tokenizer = None
         self._model = None
         self._task_keywords = self._build_task_keywords()
+        self._task_weights = {
+            TaskType.TEXT_GENERATION: 0.1,
+            TaskType.TEXT_UNDERSTANDING: 0.2,
+            TaskType.QUESTION_ANSWERING: 0.3,
+            TaskType.SUMMARIZATION: 0.4,
+            TaskType.TRANSLATION: 0.5,
+            TaskType.REASONING: 0.6,
+            TaskType.CODE_GENERATION: 0.8,
+            TaskType.CODE_UNDERSTANDING: 0.8,
+            TaskType.IMAGE_UNDERSTANDING: 0.8,
+            TaskType.IMAGE_GENERATION: 0.8,
+            TaskType.AUDIO_UNDERSTANDING: 0.8,
+            TaskType.AUDIO_GENERATION: 0.8,
+            TaskType.VIDEO_UNDERSTANDING: 0.8,
+            TaskType.SPEECH_RECOGNITION: 0.8,
+            TaskType.SPEECH_GENERATION: 0.8,
+            TaskType.MULTIMODAL_UNDERSTANDING: 0.9,
+            TaskType.MULTIMODAL_GENERATION: 0.9,
+        }
         
     def _build_task_keywords(self) -> Dict[TaskType, List[str]]:
         """Build keyword mappings for task detection."""
@@ -177,9 +198,12 @@ class TaskDetector:
                     # Simple confidence based on keyword position
                     pos = text_lower.find(keyword)
                     confidence = 1.0 - (pos / max(len(text_lower), 1))
+                    # Apply task-specific weight to prefer more specific tasks over generic ones
+                    weight = self._task_weights.get(task_type, 1.0)
+                    weighted_confidence = confidence * weight
                     
-                    if confidence > best_confidence:
-                        best_confidence = confidence
+                    if weighted_confidence > best_confidence:
+                        best_confidence = weighted_confidence
                         best_task = task_type
         
         return TaskClassificationResult(
@@ -244,8 +268,10 @@ class TaskDetector:
                 confidence=0.1
             )
         
-        # Combine results
-        if text_result.confidence > modality_result.confidence:
+        # Combine results - prefer text result if keywords were matched
+        if text_result.confidence > 0.0:
+            return text_result
+        elif text_result.confidence > modality_result.confidence:
             return text_result
         else:
             return modality_result
