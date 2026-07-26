@@ -43,6 +43,7 @@ mypy = ">=1.4.0"
 
 [tool.poetry.scripts]
 adaptive-ml = "adaptive_ml.cli.main:app"
+adaptivebrain = "adaptive_ml.cli.main:app"
 
 [tool.black]
 line-length = 100
