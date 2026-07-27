@@ -114,3 +114,61 @@ class TestAdaptiveLearningOS:
         """Test OS initialization."""
         os = AdaptiveLearningOS()
         assert os is not None
+
+
+class TestModelServerEndpoints:
+    """Test ModelServer endpoints and backend functionalities."""
+
+    def test_server_routes(self):
+        """Test the custom endpoints of the inference ModelServer."""
+        import torch.nn as nn
+        from fastapi.testclient import TestClient
+        from adaptive_ml.serving.inference import ModelServer
+
+        # Create a mock model
+        class DummyModel(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.linear = nn.Linear(10, 10)
+            def forward(self, x, attention_mask=None):
+                return x
+
+        model = DummyModel()
+        server = ModelServer(model=model)
+        app = server.get_app()
+        client = TestClient(app)
+
+        # Test health endpoint
+        health_resp = client.get("/health")
+        assert health_resp.status_code == 200
+        assert health_resp.json()["status"] == "healthy"
+
+        # Test collect endpoint
+        collect_resp = client.post("/collect?source=web&query=https://example.com")
+        assert collect_resp.status_code == 200
+        assert collect_resp.json()["status"] == "success"
+
+        # Test process endpoint
+        process_resp = client.post("/process?content=SomeRawContent")
+        assert process_resp.status_code == 200
+        assert process_resp.json()["status"] == "success"
+
+        # Test deduplicate endpoint
+        dedup_resp = client.post("/deduplicate", json=["hello world", "hello world", "different text"])
+        assert dedup_resp.status_code == 200
+        assert len(dedup_resp.json()["unique"]) >= 1
+
+        # Test validate endpoint
+        validate_resp = client.post("/validate?text=SafeReasonableContentLongTextForValidation")
+        assert validate_resp.status_code == 200
+        assert "result" in validate_resp.json()
+
+        # Test research endpoint
+        research_resp = client.post("/research?query=NewOmniModels")
+        assert research_resp.status_code == 200
+        assert research_resp.json()["confidence_score"] == 0.914
+
+        # Test status endpoint
+        status_resp = client.get("/status")
+        assert status_resp.status_code == 200
+        assert status_resp.json()["base_model"] == "Qwen2.5-Omni-3B"

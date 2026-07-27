@@ -188,7 +188,7 @@ class Deduplication:
         self.semantic_matcher = SemanticMatcher(self.config.embedding_model)
         
         # Track seen hashes and texts
-        self.seen_hashes: Set[str] = set()
+        self.seen_hashes: Dict[str, str] = {}
         self.seen_texts: Dict[str, MultimodalEntry] = {}
         self.seen_embeddings: Dict[str, np.ndarray] = {}
     
@@ -250,7 +250,7 @@ class Deduplication:
         
         # Not a duplicate
         entry_hash = self.hasher.hash_entry(entry)
-        self.seen_hashes.add(entry_hash)
+        self.seen_hashes[entry_hash] = entry.id
         
         if entry.data.text:
             self.seen_texts[entry.id] = entry
