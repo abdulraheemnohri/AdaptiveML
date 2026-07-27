@@ -1,19 +1,12 @@
-# Adaptive Omni ML Platform - Git Ignore
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# C extensions
 *.so
+
+# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -31,12 +24,40 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual environments
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Environments
 .env
 .venv
 env/
 venv/
 ENV/
+env.bak/
+venv.bak/
 
 # IDE
 .idea/
@@ -45,59 +66,35 @@ ENV/
 *.swo
 *~
 
-# Testing
-.tox/
-.coverage
-.coverage.*
-htmlcov/
-.pytest_cache/
-.mypy_cache/
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
-adaptive_omni.db
+# OS
+.DS_Store
+Thumbs.db
 
 # Logs
 *.log
-logs/
 
-# Models
-models/
-*.bin
-*.pth
-*.pt
-*.safetensors
-*.h5
-*.tflite
-*.onnx
-
-# Training output
-training_output/
-
-# Data storage
-data/
-
-# Node.js
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Frontend build
-dist/
-build/
-.cache/
-
-# Environment files
+# Local configuration
 .env
 .env.local
-.env.development
-.env.test
-.env.production
+.env.*.local
 
-# Temporary files
-*.tmp
-*.temp
-.cache
+# Model files
+*.pt
+*.pth
+*.bin
+*.h5
+*.onnx
+*.safetensors
+
+# Data files
+*.npy
+*.npz
+
+# MLflow
+mlruns/
+
+# Qdrant
+qdrant_data/
+
+# FAISS
+faiss_index/
