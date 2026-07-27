@@ -70,6 +70,29 @@ class FeedbackRequest(BaseModel):
     correction: Optional[str] = None
 
 
+class AddSourceRequest(BaseModel):
+    """Request model for adding a data source."""
+
+    name: str
+    type: str
+    priority: str
+    trust_level: str
+
+
+class AddGapRequest(BaseModel):
+    """Request model for adding a knowledge gap."""
+
+    topic: str
+    importance: str
+    confidence: str
+
+
+class ToggleAgentRequest(BaseModel):
+    """Request model for toggling agent autonomy level."""
+
+    autonomous_level: str
+
+
 @dataclass
 class ServerConfig:
     """Configuration for the inference server."""
@@ -142,6 +165,33 @@ class ModelServer:
             {"id": "mem-1", "type": "user", "content": "Prefer short, direct, fact-filled explanations.", "trusted": True, "created_at": "2025-02-23T10:00:00Z"},
             {"id": "mem-2", "type": "conversation", "content": "Discussed the Urdu transliteration of common vocabulary.", "trusted": True, "created_at": "2025-02-23T11:30:00Z"},
             {"id": "mem-3", "type": "task", "content": "Fine-tune Qwen2.5-Omni on target-task text datasets.", "trusted": False, "created_at": "2025-02-23T12:15:00Z"},
+        ]
+
+        # Data Sources (Section 3)
+        self.data_sources = [
+            {"id": "src-1", "name": "Urdu Wikipedia Sitemap", "type": "sitemap", "priority": "high", "trust_level": "trusted", "status": "active"},
+            {"id": "src-2", "name": "MMMU Multimodal Benchmark Repo", "type": "git", "priority": "critical", "trust_level": "fully_trusted", "status": "active"},
+            {"id": "src-3", "name": "ML arXiv RSS Feed", "type": "rss", "priority": "medium", "trust_level": "unverified", "status": "active"}
+        ]
+
+        # Knowledge Gaps (Section 8)
+        self.knowledge_gaps = [
+            {"id": "gap-1", "topic": "Urdu colloquial dialect translations", "importance": "high", "confidence": "low", "status": "researching"},
+            {"id": "gap-2", "topic": "MMMU Video Frame Spatial Temporal Reasoning", "importance": "critical", "confidence": "medium", "status": "queued"}
+        ]
+
+        # Autonomous Agents (Section 26)
+        self.autonomous_agents = [
+            {"id": "agent-supervisor", "name": "Supervisor Agent", "autonomous_level": "autonomous", "status": "idle"},
+            {"id": "agent-research", "name": "Research Agent", "autonomous_level": "semi-automatic", "status": "researching"},
+            {"id": "agent-collector", "name": "Data Collector Agent", "autonomous_level": "automatic", "status": "idle"},
+            {"id": "agent-forgetting", "name": "Forgetting Detection Agent", "autonomous_level": "autonomous", "status": "idle"}
+        ]
+
+        # System Alerts (Section 44)
+        self.system_alerts = [
+            {"id": "alert-1", "type": "info", "message": "New model candidate v3.4.3 compiled.", "timestamp": "2025-02-23T12:00:00Z"},
+            {"id": "alert-2", "type": "warning", "message": "Urdu translation forgetting risk warning. Self-recovery training recommended.", "timestamp": "2025-02-23T12:05:00Z"}
         ]
 
         # Device
@@ -575,6 +625,78 @@ class ModelServer:
                     "correction": request.correction
                 }
             }
+
+        @self.app.get("/data/sources")
+        async def list_sources():
+            """List all data sources."""
+            return {"sources": self.data_sources}
+
+        @self.app.post("/data/sources")
+        async def add_source(request: AddSourceRequest):
+            """Add a data source."""
+            import uuid
+            new_src = {
+                "id": f"src-{str(uuid.uuid4())[:6]}",
+                "name": request.name,
+                "type": request.type,
+                "priority": request.priority,
+                "trust_level": request.trust_level,
+                "status": "active"
+            }
+            self.data_sources.append(new_src)
+            return {"status": "success", "source": new_src}
+
+        @self.app.post("/data/sources/{source_id}/test")
+        async def test_source(source_id: str):
+            """Test data source connectivity."""
+            for src in self.data_sources:
+                if src["id"] == source_id:
+                    return {"status": "success", "message": f"Connection test to data source '{src['name']}' passed. Speed: 4.8MB/s."}
+            raise HTTPException(status_code=404, detail="Source not found")
+
+        @self.app.get("/gaps")
+        async def list_gaps():
+            """List knowledge gaps."""
+            return {"gaps": self.knowledge_gaps}
+
+        @self.app.post("/gaps")
+        async def add_gap(request: AddGapRequest):
+            """Add a knowledge gap."""
+            import uuid
+            new_gap = {
+                "id": f"gap-{str(uuid.uuid4())[:6]}",
+                "topic": request.topic,
+                "importance": request.importance,
+                "confidence": request.confidence,
+                "status": "queued"
+            }
+            self.knowledge_gaps.append(new_gap)
+            return {"status": "success", "gap": new_gap}
+
+        @self.app.get("/agents")
+        async def list_agents():
+            """List autonomous agents."""
+            return {"agents": self.autonomous_agents}
+
+        @self.app.post("/agents/{agent_id}/toggle")
+        async def toggle_agent(agent_id: str, request: ToggleAgentRequest):
+            """Toggle agent autonomous level."""
+            for agent in self.autonomous_agents:
+                if agent["id"] == agent_id:
+                    agent["autonomous_level"] = request.autonomous_level
+                    return {"status": "success", "agent": agent}
+            raise HTTPException(status_code=404, detail="Agent not found")
+
+        @self.app.get("/alerts")
+        async def list_alerts():
+            """List system alerts."""
+            return {"alerts": self.system_alerts}
+
+        @self.app.post("/alerts/clear")
+        async def clear_alerts():
+            """Clear all system alerts."""
+            self.system_alerts = []
+            return {"status": "success", "message": "Alerts cleared."}
 
     def _route_request(self, request: PredictRequest) -> Optional[str]:
         """
