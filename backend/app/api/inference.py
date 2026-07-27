@@ -269,31 +269,26 @@ class ModelServer:
         @self.app.post("/collect")
         async def collect_data(source: str, query: Optional[str] = None):
             """Collect data from Web, RSS, GitHub, YouTube sources."""
-            import uuid
-            from datetime import datetime
-
-            source_id = str(uuid.uuid4())[:8]
-            raw_data = {
-                "source": source,
-                "source_id": source_id,
-                "uri": query or f"https://example.com/collected/{source}",
-                "content_type": "text",
-                "modality": ["text"],
-                "timestamp": datetime.now().isoformat(),
-                "content": f"Sample acquired text content for {source}.",
-            }
-            return {"status": "success", "source_id": source_id, "data": raw_data}
+            from backend.app.services.data_collection import DataCollectionService
+            collector = DataCollectionService()
+            sample = collector.collect(source, query or f"https://example.com/{source}")
+            return {"status": "success", "source_id": sample.source_id, "data": sample.to_dict()}
 
         @self.app.post("/process")
         async def process_data(content: str, source: str = "web"):
-            """Process raw content and extract structured data."""
+            """Process raw content and extract structured data using the smart Decision Engine."""
+            from backend.app.services.learning_decision import DecisionEngine
+            engine = DecisionEngine()
+            decision = engine.evaluate_decision(content, source)
+
             processed = {
                 "id": "processed-001",
                 "text": content,
-                "instruction": f"Explain: {content}",
+                "instruction": f"Explain context of: {content}",
                 "output": "Processed output from Qwen Omni backend pipeline.",
-                "domain": "general",
-                "language": "en"
+                "domain": source,
+                "language": "en",
+                "learning_decision": decision
             }
             return {"status": "success", "processed": processed}
 
@@ -342,16 +337,33 @@ class ModelServer:
         @self.app.post("/research")
         async def run_research(query: str):
             """Run multi-agent research team on knowledge gaps."""
+            from backend.app.services.research_agent import ResearchAgentService
+            research_service = ResearchAgentService()
+            synthesis = research_service.research_gap(query)
+
+            # Save facts to knowledge graph
+            from backend.app.services.knowledge_graph import KnowledgeGraphService
+            kg = KnowledgeGraphService()
+            for claim in synthesis.claims:
+                kg.add_relation("Qwen2.5-Omni-3B", "Researched Fact", claim[:50], source_ref="Multi-Agent Research")
+
             return {
                 "query": query,
-                "confidence_score": 0.914,
-                "agents_used": ["Web Research Agent", "Academic Research Agent", "Evidence Collector", "Knowledge Synthesizer"],
+                "confidence_score": synthesis.confidence_score,
+                "reliability_score": synthesis.reliability_score,
+                "claims": synthesis.claims,
+                "evidence_links": synthesis.evidence_links,
+                "is_contradictory": synthesis.is_contradictory,
                 "status": "RAG and Knowledge Graph successfully updated"
             }
 
         @self.app.get("/status")
         async def get_system_status():
-            """Get full dashboard status information."""
+            """Get full dashboard status information and Knowledge Graph stats."""
+            from backend.app.services.knowledge_graph import KnowledgeGraphService
+            kg = KnowledgeGraphService()
+            kg_stats = kg.get_stats()
+
             return {
                 "base_model": "Qwen2.5-Omni-3B",
                 "production_version": "v2.4.1",
@@ -366,7 +378,8 @@ class ModelServer:
                     "video": "🟢 89%",
                     "speech": "🟢 90%"
                 },
-                "forgetting_risk": "LOW"
+                "forgetting_risk": "LOW",
+                "knowledge_graph": kg_stats
             }
 
     def _route_request(self, request: PredictRequest) -> Optional[str]:
