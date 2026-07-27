@@ -9,7 +9,7 @@ description = "Adaptive ML Framework for Continual Learning with Catastrophic Fo
 authors = ["AdaptiveML Team"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "adaptive_ml", from = "src"}]
+packages = [{include = "adaptive_ml", from = "ml"}]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.13"

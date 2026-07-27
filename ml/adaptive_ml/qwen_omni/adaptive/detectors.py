@@ -31,7 +31,7 @@ class TaskClassificationResult:
     sub_tasks: List[TaskType] = field(default_factory=list)
     sub_confidences: List[float] = field(default_factory=list)
     explanation: str = ""
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "task_type": self.task_type.value,
@@ -51,7 +51,7 @@ class DomainClassificationResult:
     sub_confidences: List[float] = field(default_factory=list)
     language: str = "en"
     explanation: str = ""
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "domain": self.domain.value,
@@ -72,7 +72,7 @@ class NoveltyResult:
     similarity_scores: Dict[str, float] = field(default_factory=dict)
     closest_matches: List[str] = field(default_factory=list)
     explanation: str = ""
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "novelty_score": self.novelty_score,
@@ -89,7 +89,7 @@ class TaskDetector:
     Detects the task type from input data.
     Uses keyword matching, semantic analysis, and modality detection.
     """
-    
+
     def __init__(self, use_semantic: bool = True, semantic_model: str = "sentence-transformers/all-MiniLM-L6-v2"):
         self.use_semantic = use_semantic
         self.semantic_model = semantic_model
@@ -115,7 +115,7 @@ class TaskDetector:
             TaskType.MULTIMODAL_UNDERSTANDING: 0.9,
             TaskType.MULTIMODAL_GENERATION: 0.9,
         }
-        
+
     def _build_task_keywords(self) -> Dict[TaskType, List[str]]:
         """Build keyword mappings for task detection."""
         return {
@@ -184,14 +184,14 @@ class TaskDetector:
                 "step by step", "logic", "reasoning"
             ],
         }
-    
+
     def _detect_from_text(self, text: str) -> TaskClassificationResult:
         """Detect task from text using keyword matching."""
         text_lower = text.lower()
-        
+
         best_task = TaskType.TEXT_GENERATION
         best_confidence = 0.0
-        
+
         for task_type, keywords in self._task_keywords.items():
             for keyword in keywords:
                 if keyword in text_lower:
@@ -201,17 +201,17 @@ class TaskDetector:
                     # Apply task-specific weight to prefer more specific tasks over generic ones
                     weight = self._task_weights.get(task_type, 1.0)
                     weighted_confidence = confidence * weight
-                    
+
                     if weighted_confidence > best_confidence:
                         best_confidence = weighted_confidence
                         best_task = task_type
-        
+
         return TaskClassificationResult(
             task_type=best_task,
             confidence=best_confidence,
             explanation=f"Detected from keywords: {best_task.value}"
         )
-    
+
     def _detect_from_modalities(self, modalities: List[ModalityType]) -> TaskClassificationResult:
         """Detect task from modalities."""
         modality_task_map = {
@@ -222,7 +222,7 @@ class TaskDetector:
             ModalityType.SPEECH: TaskType.SPEECH_RECOGNITION,
             ModalityType.MULTI_MODAL: TaskType.MULTIMODAL_UNDERSTANDING,
         }
-        
+
         if len(modalities) == 1:
             return TaskClassificationResult(
                 task_type=modality_task_map.get(modalities[0], TaskType.TEXT_GENERATION),
@@ -235,21 +235,21 @@ class TaskDetector:
                 confidence=0.95,
                 explanation=f"Multiple modalities: {[m.value for m in modalities]}"
             )
-    
+
     def detect(self, data: MultimodalData, instruction: Optional[str] = None) -> TaskClassificationResult:
         """
         Detect task type from multimodal data.
-        
+
         Args:
             data: Multimodal input data
             instruction: Optional instruction/prompt
-            
+
         Returns:
             TaskClassificationResult with detected task and confidence
         """
         # Use instruction if provided
         text_to_analyze = instruction or data.text or ""
-        
+
         # Detect from text
         if text_to_analyze:
             text_result = self._detect_from_text(text_to_analyze)
@@ -258,7 +258,7 @@ class TaskDetector:
                 task_type=TaskType.TEXT_GENERATION,
                 confidence=0.1
             )
-        
+
         # Detect from modalities
         if data.modalities:
             modality_result = self._detect_from_modalities(data.modalities)
@@ -267,7 +267,7 @@ class TaskDetector:
                 task_type=TaskType.TEXT_GENERATION,
                 confidence=0.1
             )
-        
+
         # Combine results - prefer text result if keywords were matched
         if text_result.confidence > 0.0:
             return text_result
@@ -282,11 +282,11 @@ class DomainDetector:
     Detects the domain from input data.
     Uses keyword matching, language detection, and semantic analysis.
     """
-    
+
     def __init__(self):
         self._domain_keywords = self._build_domain_keywords()
         self._language_keywords = self._build_language_keywords()
-        
+
     def _build_domain_keywords(self) -> Dict[DomainType, List[str]]:
         """Build keyword mappings for domain detection."""
         return {
@@ -349,7 +349,7 @@ class DomainDetector:
                 "story", "fiction", "creativity", "imagination"
             ],
         }
-    
+
     def _build_language_keywords(self) -> Dict[str, List[str]]:
         """Build language detection keywords."""
         return {
@@ -363,44 +363,44 @@ class DomainDetector:
             "ja": ["japanese", "日本語", "japan", "jp", "日本"],
             "ar": ["arabic", "العربية", "saudi", "egypt", "中东"],
         }
-    
+
     def _detect_language(self, text: str) -> str:
         """Detect language from text."""
         text_lower = text.lower()
-        
+
         for lang, keywords in self._language_keywords.items():
             for keyword in keywords:
                 if keyword in text_lower:
                     return lang
-        
+
         return "en"  # Default to English
-    
+
     def _detect_from_text(self, text: str) -> DomainClassificationResult:
         """Detect domain from text using keyword matching."""
         text_lower = text.lower()
-        
+
         best_domain = DomainType.GENERAL
         best_confidence = 0.0
-        
+
         for domain, keywords in self._domain_keywords.items():
             for keyword in keywords:
                 if keyword in text_lower:
                     pos = text_lower.find(keyword)
                     confidence = 1.0 - (pos / max(len(text_lower), 1))
-                    
+
                     if confidence > best_confidence:
                         best_confidence = confidence
                         best_domain = domain
-        
+
         language = self._detect_language(text)
-        
+
         return DomainClassificationResult(
             domain=best_domain,
             confidence=best_confidence,
             language=language,
             explanation=f"Detected from keywords: {best_domain.value}"
         )
-    
+
     def _detect_from_modality(self, modalities: List[ModalityType]) -> DomainClassificationResult:
         """Detect domain from modalities."""
         modality_domain_map = {
@@ -411,7 +411,7 @@ class DomainDetector:
             ModalityType.SPEECH: DomainType.AUDIO,
             ModalityType.MULTI_MODAL: DomainType.GENERAL,
         }
-        
+
         if len(modalities) == 1:
             return DomainClassificationResult(
                 domain=modality_domain_map.get(modalities[0], DomainType.GENERAL),
@@ -423,26 +423,26 @@ class DomainDetector:
             domains = [modality_domain_map.get(m, DomainType.GENERAL) for m in modalities]
             domain_counts = {d: domains.count(d) for d in set(domains)}
             best_domain = max(domain_counts, key=domain_counts.get)
-            
+
             return DomainClassificationResult(
                 domain=best_domain,
                 confidence=0.7,
                 language="en"
             )
-    
+
     def detect(self, data: MultimodalData, instruction: Optional[str] = None) -> DomainClassificationResult:
         """
         Detect domain from multimodal data.
-        
+
         Args:
             data: Multimodal input data
             instruction: Optional instruction/prompt
-            
+
         Returns:
             DomainClassificationResult with detected domain and confidence
         """
         text_to_analyze = instruction or data.text or ""
-        
+
         if text_to_analyze:
             text_result = self._detect_from_text(text_to_analyze)
         else:
@@ -451,7 +451,7 @@ class DomainDetector:
                 confidence=0.1,
                 language="en"
             )
-        
+
         if data.modalities:
             modality_result = self._detect_from_modality(data.modalities)
         else:
@@ -460,7 +460,7 @@ class DomainDetector:
                 confidence=0.1,
                 language="en"
             )
-        
+
         # Combine results - prefer text detection
         if text_result.confidence > 0.5:
             return text_result
@@ -476,55 +476,55 @@ class NoveltyDetector:
     Detects novelty of input data compared to existing knowledge.
     Uses semantic similarity, keyword overlap, and memory lookup.
     """
-    
+
     def __init__(self, memory_entries: Optional[List[Any]] = None):
         self.memory_entries = memory_entries or []
         self._embedding_model = None
         self._tokenizer = None
-        
+
     def _compute_hash(self, text: str) -> str:
         """Compute hash for text deduplication."""
         return hashlib.sha256(text.encode()).hexdigest()[:16]
-    
+
     def _is_duplicate(self, text: str, threshold: float = 0.95) -> Tuple[bool, List[str]]:
         """Check if text is a duplicate of existing entries."""
         if not self.memory_entries:
             return False, []
-        
+
         text_hash = self._compute_hash(text)
-        
+
         for entry in self.memory_entries:
             if hasattr(entry, 'data') and hasattr(entry.data, 'text'):
                 entry_text = entry.data.text or ""
                 entry_hash = self._compute_hash(entry_text)
-                
+
                 # Simple hash-based duplicate detection
                 if text_hash == entry_hash:
                     return True, [entry.id]
-        
+
         return False, []
-    
+
     def _compute_similarity(self, text1: str, text2: str) -> float:
         """Compute similarity between two texts (simple implementation)."""
         # Use Jaccard similarity for simplicity
         set1 = set(text1.lower().split())
         set2 = set(text2.lower().split())
-        
+
         intersection = len(set1 & set2)
         union = len(set1 | set2)
-        
+
         if union == 0:
             return 0.0
-        
+
         return intersection / union
-    
+
     def _find_similar_entries(self, text: str, top_k: int = 5) -> List[Tuple[str, float]]:
         """Find most similar entries in memory."""
         if not self.memory_entries or not text:
             return []
-        
+
         similarities = []
-        
+
         for entry in self.memory_entries:
             if hasattr(entry, 'data') and hasattr(entry.data, 'text'):
                 entry_text = entry.data.text or ""
@@ -532,76 +532,76 @@ class NoveltyDetector:
                     similarity = self._compute_similarity(text, entry_text)
                     if similarity > 0.1:  # Only consider non-trivial similarities
                         similarities.append((entry.id, similarity))
-        
+
         # Sort by similarity (descending)
         similarities.sort(key=lambda x: x[1], reverse=True)
-        
+
         return similarities[:top_k]
-    
+
     def _check_quality(self, text: str) -> Tuple[bool, str]:
         """Check text quality."""
         if not text or len(text.strip()) < 10:
             return False, "Text too short"
-        
+
         # Simple quality checks
         if len(text.split()) < 3:
             return False, "Too few words"
-        
+
         # Check for excessive repetition
         words = text.lower().split()
         unique_words = set(words)
         if len(unique_words) / len(words) < 0.3:
             return False, "Excessive repetition"
-        
+
         return True, "Good quality"
-    
+
     def _check_safety(self, text: str) -> bool:
         """Check text for unsafe content (placeholder)."""
         # In a production system, this would use a proper safety classifier
         unsafe_keywords = ["hate", "violence", "illegal", "harm"]
         text_lower = text.lower()
-        
+
         for keyword in unsafe_keywords:
             if keyword in text_lower:
                 return False
-        
+
         return True
-    
+
     def detect(self, data: MultimodalData, instruction: Optional[str] = None) -> NoveltyResult:
         """
         Detect novelty of input data.
-        
+
         Args:
             data: Multimodal input data
             instruction: Optional instruction/prompt
-            
+
         Returns:
             NoveltyResult with novelty score and learning decision
         """
         text_to_analyze = instruction or data.text or ""
-        
+
         # Check for duplicates
         is_duplicate, duplicate_ids = self._is_duplicate(text_to_analyze)
-        
+
         # Check quality
         is_good_quality, quality_reason = self._check_quality(text_to_analyze)
         is_low_quality = not is_good_quality
-        
+
         # Check safety
         is_unsafe = not self._check_safety(text_to_analyze)
-        
+
         # Find similar entries
         similar_entries = self._find_similar_entries(text_to_analyze)
         similarity_scores = {entry_id: score for entry_id, score in similar_entries}
         closest_matches = [entry_id for entry_id, _ in similar_entries]
-        
+
         # Calculate novelty score (inverse of max similarity)
         if similar_entries:
             max_similarity = max(score for _, score in similar_entries)
             novelty_score = 1.0 - max_similarity
         else:
             novelty_score = 1.0  # Completely novel if no similar entries
-        
+
         # Adjust novelty based on quality and safety
         if is_duplicate:
             novelty_score = 0.0
@@ -609,7 +609,7 @@ class NoveltyDetector:
             novelty_score *= 0.3
         elif is_unsafe:
             novelty_score = 0.0
-        
+
         # Determine learning decision
         if is_duplicate or is_unsafe:
             learning_decision = LearningDecision.IGNORE
@@ -623,7 +623,7 @@ class NoveltyDetector:
             learning_decision = LearningDecision.REPLAY
         else:
             learning_decision = LearningDecision.IGNORE
-        
+
         # Generate explanation
         if is_duplicate:
             explanation = f"Duplicate of existing entries: {duplicate_ids}"
@@ -633,7 +633,7 @@ class NoveltyDetector:
             explanation = f"Low quality: {quality_reason}"
         else:
             explanation = f"Novelty score: {novelty_score:.2f}, similar to: {closest_matches}"
-        
+
         return NoveltyResult(
             novelty_score=novelty_score,
             is_novel=novelty_score >= 0.5,
@@ -642,7 +642,7 @@ class NoveltyDetector:
             closest_matches=closest_matches,
             explanation=explanation
         )
-    
+
     def update_memory(self, memory_entries: List[Any]) -> None:
         """Update the memory entries for novelty detection."""
         self.memory_entries = memory_entries

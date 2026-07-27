@@ -82,7 +82,7 @@ class Task:
     adapter_id: Optional[str] = None
     data_path: Optional[str] = None
     num_examples: int = 0
-    
+
     def __post_init__(self):
         if isinstance(self.created_at, str):
             self.created_at = datetime.fromisoformat(self.created_at)
@@ -113,7 +113,7 @@ class MemoryEntry:
     uncertainty: float = 0.0  # Model uncertainty (for hard example replay)
     timestamp: datetime = field(default_factory=datetime.now)
     metadata: Dict[str, Any] = field(default_factory=dict)
-    
+
     def get_embedding_array(self) -> Optional[np.ndarray]:
         """Convert embedding list to numpy array."""
         if self.embedding is None:
@@ -143,27 +143,27 @@ class TrainingConfig:
     gradient_accumulation_steps: int = 1
     warmup_steps: int = 100
     weight_decay: float = 0.01
-    
+
     # Continual learning specific
     ewc_lambda: float = 1000.0  # EWC regularization strength
     mas_lambda: float = 100.0  # MAS regularization strength
     si_lambda: float = 100.0  # SI regularization strength
     distill_alpha: float = 0.5  # Knowledge distillation weight
     replay_ratio: float = 0.3  # Fraction of batch from replay buffer
-    
+
     # Parameter importance method
     importance_method: ParameterImportanceMethod = ParameterImportanceMethod.EWC
-    
+
     # Dynamic architecture
     dynamic_lora: bool = True  # Enable dynamic LoRA rank adaptation
     lora_rank_range: Tuple[int, int] = (8, 64)  # Min and max LoRA rank
     lora_growth_rate: float = 1.1  # Rank growth multiplier
-    
+
     # Optimization
     optimizer: str = "adamw"
     scheduler: str = "cosine"
     mixed_precision: str = "bf16"  # "no", "fp16", "bf16"
-    
+
     # Device
     device: str = "auto"  # Will be resolved at runtime to "cuda" or "cpu"
 
@@ -178,22 +178,22 @@ class AdapterConfig:
     lora_dropout: float = 0.05
     target_modules: List[str] = field(default_factory=lambda: ["q_proj", "v_proj"])
     task_type: str = "CAUSAL_LM"  # For PEFT
-    
+
     # QLoRA specific
     bits: int = 4  # Quantization bits
     double_quant: bool = True
-    
+
     # Adapter routing
     use_router: bool = True
     router_type: str = "domain"  # "domain", "task", "hybrid"
-    
+
     # Dynamic LoRA
     dynamic_rank: bool = True  # Enable dynamic rank adaptation
     min_rank: int = 8  # Minimum LoRA rank
     max_rank: int = 64  # Maximum LoRA rank
     rank_growth_rate: float = 1.1  # Multiplier for rank growth
     rank_shrink_threshold: float = 0.8  # Accuracy threshold to shrink rank
-    
+
     # Multi-modal adapters
     use_vision_adapter: bool = True  # Use adapter for vision modality
     use_audio_adapter: bool = True  # Use adapter for audio modality
@@ -207,17 +207,17 @@ class MemoryConfig:
 
     buffer_size: int = 10000
     sampling_strategy: SamplingStrategy = SamplingStrategy.BALANCED
-    
+
     # Diversity sampling
     diversity_metric: str = "cosine"  # "cosine", "euclidean", "dot"
     diversity_threshold: float = 0.5
-    
+
     # Importance sampling
     importance_metric: str = "uncertainty"  # "uncertainty", "loss", "custom"
-    
+
     # Reservoir sampling
     use_reservoir: bool = True
-    
+
     # Memory compression (for large buffers)
     use_compression: bool = True
     compression_method: str = "ivf"  # "ivf", "pq", "ivf_pq", "hnsw"
@@ -233,23 +233,23 @@ class DriftConfig:
 
     window_size: int = 1000
     reference_size: int = 1000
-    
+
     # Statistical drift
     statistical_test: str = "ks"  # "ks", "psi", "wasserstein"
     statistical_threshold: float = 0.05
-    
+
     # Semantic drift
     semantic_threshold: float = 0.15
     embedding_model: str = "sentence-transformers/all-mpnet-base-v2"
-    
+
     # Multi-modal semantic drift
     use_clip: bool = True  # Use CLIP for image-text drift detection
     clip_model: str = "openai/clip-vit-base-patch32"  # CLIP model for multi-modal
     clip_threshold: float = 0.2  # Threshold for CLIP-based drift
-    
+
     # Concept drift
     concept_threshold: float = 0.1
-    
+
     # Advanced drift detection
     use_ensemble: bool = True  # Combine multiple drift detection methods
     ensemble_weights: Dict[str, float] = field(default_factory=lambda: {
@@ -266,22 +266,22 @@ class EvaluationConfig:
     promotion_strategy: PromotionStrategy = PromotionStrategy.STRICT
     retention_threshold: float = 0.95  # Minimum retention score for promotion
     new_task_threshold: float = 0.1  # Minimum improvement on new tasks
-    
+
     # Retention score weights
     new_score_weight: float = 0.4
     old_score_weight: float = 0.4
     forgetting_penalty_weight: float = 0.2
-    
+
     # A/B testing
     ab_test_ratio: float = 0.1  # Fraction of traffic for A/B test
     ab_test_duration: str = "1h"  # Duration for A/B test
-    
+
     # Advanced evaluation metrics
     use_perplexity: bool = True  # Calculate perplexity for language tasks
     use_bleu: bool = True  # Calculate BLEU score for text generation
     use_rouge: bool = True  # Calculate ROUGE score for text generation
     use_f1: bool = True  # Calculate F1 score for classification
-    
+
     # Multi-modal evaluation
     use_vision_metrics: bool = True  # Calculate vision-specific metrics
     use_audio_metrics: bool = True  # Calculate audio-specific metrics
@@ -294,7 +294,7 @@ class RegistryConfig:
     registry_path: str = "./model_registry"
     max_versions: int = 10  # Maximum number of versions to keep
     auto_archive: bool = True
-    
+
     # ONNX export
     export_onnx: bool = True
     onnx_opset: int = 14
@@ -316,16 +316,16 @@ class ModelConfig:
     tokenizer: Optional[str] = None  # If None, uses base_model's tokenizer
     dtype: str = "bfloat16"  # "float32", "float16", "bfloat16"
     device_map: Optional[Dict[str, str]] = None  # For multi-GPU
-    
+
     # Multi-modal settings
     modality: ModalityType = ModalityType.MULTI_MODAL
     vision_encoder: Optional[str] = None  # Custom vision encoder
     audio_encoder: Optional[str] = None  # Custom audio encoder
-    
+
     # Quantization for large models
     quantize: bool = True
     quantization_bits: int = 4  # 4, 8, or None
-    
+
     def get_dtype(self) -> torch.dtype:
         """Convert string dtype to torch.dtype."""
         dtype_map = {

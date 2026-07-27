@@ -131,7 +131,7 @@ class MultimodalData:
     video: Optional[Union[str, np.ndarray, torch.Tensor]] = None
     speech: Optional[Union[str, np.ndarray, torch.Tensor]] = None
     modalities: List[ModalityType] = field(default_factory=list)
-    
+
     def __post_init__(self):
         # Auto-detect modalities
         if self.text is not None:
@@ -149,7 +149,7 @@ class MultimodalData:
         if self.speech is not None:
             if ModalityType.SPEECH not in self.modalities:
                 self.modalities.append(ModalityType.SPEECH)
-        
+
         if len(self.modalities) > 1:
             if ModalityType.MULTI_MODAL not in self.modalities:
                 self.modalities.append(ModalityType.MULTI_MODAL)
@@ -175,7 +175,7 @@ class MultimodalEntry:
     error_rate: float = 0.0
     last_accessed: Optional[datetime] = None
     access_count: int = 0
-    
+
     def get_priority_score(self) -> float:
         """Calculate priority score for sampling."""
         priority_weights = {
@@ -185,14 +185,14 @@ class MultimodalEntry:
             MemoryPriority.LOW: 0.2
         }
         base_score = priority_weights.get(self.priority, 0.5)
-        
+
         # Boost by importance, novelty, difficulty, forgetting risk, error rate
         score = base_score * (1 + self.importance * 0.5)
         score *= (1 + self.novelty * 0.3)
         score *= (1 + self.difficulty * 0.2)
         score *= (1 + self.forgetting_risk * 2.0)  # High forgetting risk = high priority
         score *= (1 + self.error_rate * 1.5)  # High error rate = high priority
-        
+
         return score
 
 
@@ -208,7 +208,7 @@ class MemoryCandidate:
     is_duplicate: bool = False
     is_low_quality: bool = False
     is_unsafe: bool = False
-    
+
     def should_store(self, threshold: float = 0.5) -> bool:
         """Determine if this candidate should be stored."""
         if self.is_duplicate or self.is_low_quality or self.is_unsafe:
@@ -233,7 +233,7 @@ class AdapterInfo:
     last_updated: datetime = field(default_factory=datetime.now)
     performance: Dict[str, float] = field(default_factory=dict)
     is_active: bool = True
-    
+
     def get_performance_score(self) -> float:
         """Calculate overall performance score."""
         if not self.performance:
@@ -253,13 +253,13 @@ class ModelVersion:
     retention_score: float = 1.0
     is_production: bool = False
     size_gb: float = 0.0
-    
+
     def get_overall_performance(self) -> float:
         """Calculate overall performance across all modalities."""
         if not self.performance:
             return 0.0
         return sum(self.performance.values()) / len(self.performance)
-    
+
     def get_forgetting_level(self) -> float:
         """Calculate overall forgetting level."""
         if not self.forgetting_scores:
@@ -283,7 +283,7 @@ class ReplayStats:
     average_forgetting_risk: float = 0.0
     average_error_rate: float = 0.0
     utilization_rate: float = 0.0
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "total_entries": self.total_entries,
@@ -307,7 +307,7 @@ class ForgettingMetrics:
     retention_score: float = 1.0
     forgetting_detected: bool = False
     critical_modalities: List[ModalityType] = field(default_factory=list)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "modality_forgetting": {k.value: v for k, v in self.modality_forgetting.items()},
@@ -328,14 +328,14 @@ class ProtectionStats:
     protected_parameters: int = 0
     total_parameters: int = 0
     protection_ratio: float = 0.0
-    
+
     def __post_init__(self):
         """Calculate protection ratio."""
         if self.total_parameters > 0:
             self.protection_ratio = self.protected_parameters / self.total_parameters
         else:
             self.protection_ratio = 0.0
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "ewc_lambda": self.ewc_lambda,
@@ -359,7 +359,7 @@ class TrainingStats:
     distillation_loss: float = 0.0
     ewc_loss: float = 0.0
     gradient_norm: float = 0.0
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "epoch": self.epoch,
@@ -394,7 +394,7 @@ class InferenceResult:
     error_message: Optional[str] = None
     metrics: Dict[str, float] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
         result = {
@@ -425,34 +425,34 @@ class QwenOmniModelConfig(BaseModel):
     """Configuration for Qwen2.5-Omni-3B model."""
     base_model: str = "Qwen/Qwen2.5-Omni-3B"
     model_type: str = "qwen2.5-omni"
-    
+
     # Thinker-Talker architecture
     use_thinker: bool = True
     use_talker: bool = True
-    
+
     # Quantization
     quantize: bool = False
     quantization_bits: int = 4
     quantization_method: str = "bitsandbytes"
-    
+
     # Device
     device: str = "cuda"
     device_map: Optional[Dict[str, str]] = None
-    
+
     # Memory optimization
     use_flash_attention: bool = True
     use_bfloat16: bool = True
-    
+
     # Modality support
     supported_modalities: List[ModalityType] = Field(default_factory=lambda: [
-        ModalityType.TEXT, ModalityType.VISION, ModalityType.AUDIO, 
+        ModalityType.TEXT, ModalityType.VISION, ModalityType.AUDIO,
         ModalityType.VIDEO, ModalityType.SPEECH, ModalityType.MULTI_MODAL
     ])
-    
+
     # Memory requirements (for validation)
     min_memory_gb: float = 18.0  # Minimum for 15s video
     recommended_memory_gb: float = 24.0
-    
+
     class Config:
         use_enum_values = True
 
@@ -466,7 +466,7 @@ class QwenOmniTrainingConfig(BaseModel):
     num_epochs: int = 3
     max_steps: int = 1000
     warmup_steps: int = 100
-    
+
     # LoRA configuration
     use_lora: bool = True
     lora_rank: int = 8
@@ -476,11 +476,11 @@ class QwenOmniTrainingConfig(BaseModel):
         "q_proj", "k_proj", "v_proj", "o_proj",
         "gate_proj", "up_proj", "down_proj"
     ])
-    
+
     # QLoRA configuration
     use_qlora: bool = False
     quantization_bits: int = 4
-    
+
     # Dynamic LoRA
     use_dynamic_lora: bool = True
     min_rank: int = 4
@@ -488,7 +488,7 @@ class QwenOmniTrainingConfig(BaseModel):
     rank_growth_rate: float = 1.5
     rank_shrink_threshold: float = 0.8
     rank_growth_threshold: float = 0.9
-    
+
     # Parameter importance
     use_ewc: bool = True
     ewc_lambda: float = 0.1
@@ -497,25 +497,25 @@ class QwenOmniTrainingConfig(BaseModel):
     use_si: bool = True
     si_lambda: float = 0.1
     use_fisher: bool = False
-    
+
     # Knowledge distillation
     use_distillation: bool = True
     distillation_temperature: float = 2.0
     distillation_weight: float = 0.5
-    
+
     # Replay configuration
     use_replay: bool = True
     replay_ratio: float = 0.3
     replay_batch_size: int = 4
-    
+
     # Adaptation level
     adaptation_level: AdaptationLevel = AdaptationLevel.SAFE
-    
+
     # Checkpointing
     save_checkpoints: bool = True
     checkpoint_interval: int = 500
     max_checkpoints: int = 5
-    
+
     class Config:
         use_enum_values = True
 
@@ -527,28 +527,28 @@ class QwenOmniAdapterConfig(BaseModel):
         AdapterType.GENERAL, AdapterType.CODING, AdapterType.URDU,
         AdapterType.VISION, AdapterType.AUDIO, AdapterType.VIDEO
     ])
-    
+
     # Adapter settings
     adapter_rank: int = 8
     adapter_alpha: float = 16.0
     adapter_dropout: float = 0.05
-    
+
     # Dynamic adapter creation
     create_new_adapters: bool = True
     adapter_creation_threshold: float = 0.7  # Novelty threshold
-    
+
     # Adapter routing
     use_router: bool = True
     router_type: str = "task_based"  # or "modality_based", "hybrid"
-    
+
     # Adapter merging (Level 2 adaptation)
     enable_adapter_merging: bool = True
     merge_threshold: float = 0.95  # Performance threshold for merging
     merge_interval: int = 1000  # Steps between merge checks
-    
+
     # Domain-specific adapters
     domain_adapters: Dict[DomainType, List[AdapterType]] = Field(default_factory=dict)
-    
+
     class Config:
         use_enum_values = True
 
@@ -566,18 +566,18 @@ class QwenOmniMemoryConfig(BaseModel):
         ModalityType.MULTI_MODAL: 1000,
     })
     max_entries_per_domain: int = 1000
-    
+
     # Sampling
     sampling_strategy: str = "priority_based"  # uniform, balanced, priority, adaptive
     temperature: float = 1.0
-    
+
     # Priority weights
     importance_weight: float = 0.5
     novelty_weight: float = 0.3
     difficulty_weight: float = 0.2
     forgetting_risk_weight: float = 2.0
     error_rate_weight: float = 1.5
-    
+
     # Memory compression
     use_compression: bool = True
     compression_method: str = "faiss_ivf_pq"
@@ -585,10 +585,10 @@ class QwenOmniMemoryConfig(BaseModel):
     nprobe: int = 10
     m: int = 8
     nbits: int = 8
-    
+
     # Novelty detection
     novelty_threshold: float = 0.5
-    
+
     class Config:
         use_enum_values = True
 
@@ -599,17 +599,17 @@ class QwenOmniDriftConfig(BaseModel):
     use_statistical: bool = True
     use_semantic: bool = True
     use_clip: bool = True
-    
+
     # CLIP configuration
     clip_model: str = "ViT-B/32"
     clip_threshold: float = 0.85
-    
+
     # Statistical methods
     statistical_methods: List[str] = Field(default_factory=lambda: [
         "ks", "psi", "wasserstein", "pca"
     ])
     statistical_threshold: float = 0.05
-    
+
     # Modality-specific drift
     detect_by_modality: bool = True
     modality_weights: Dict[ModalityType, float] = Field(default_factory=lambda: {
@@ -619,12 +619,12 @@ class QwenOmniDriftConfig(BaseModel):
         ModalityType.VIDEO: 1.0,
         ModalityType.SPEECH: 1.0,
     })
-    
+
     # Forgetting detection
     forgetting_strategy: ForgettingDetectionStrategy = ForgettingDetectionStrategy.MODALITY_SPECIFIC
     forgetting_threshold: float = 0.03  # 3% performance drop
     critical_modality_threshold: float = 0.05  # 5% for critical modalities
-    
+
     class Config:
         use_enum_values = True
 
@@ -634,26 +634,26 @@ class QwenOmniEvaluationConfig(BaseModel):
     # Evaluation frequency
     eval_interval: int = 100
     eval_batch_size: int = 8
-    
+
     # Metrics
     use_perplexity: bool = True
     use_bleu: bool = True
     use_rouge: bool = True
     use_f1: bool = True
-    
+
     # Modality-specific evaluation
     evaluate_text: bool = True
     evaluate_vision: bool = True
     evaluate_audio: bool = True
     evaluate_video: bool = True
     evaluate_speech: bool = True
-    
+
     # Benchmark datasets
     text_benchmark: str = "mmlu"
     vision_benchmark: str = "mmmu"
     audio_benchmark: str = "librispeech"
     video_benchmark: str = "msrvtt"
-    
+
     # Retention scoring
     retention_weights: Dict[ModalityType, float] = Field(default_factory=lambda: {
         ModalityType.TEXT: 0.3,
@@ -662,12 +662,12 @@ class QwenOmniEvaluationConfig(BaseModel):
         ModalityType.VIDEO: 0.2,
         ModalityType.SPEECH: 0.1,
     })
-    
+
     # Promotion criteria
     min_improvement: float = 0.05  # 5% improvement required
     max_forgetting: float = 0.03  # 3% max forgetting allowed
     min_retention: float = 0.98  # 98% retention required
-    
+
     class Config:
         use_enum_values = True
 
@@ -677,23 +677,23 @@ class QwenOmniRegistryConfig(BaseModel):
     registry_path: str = "./registry"
     model_storage_path: str = "./models"
     adapter_storage_path: str = "./adapters"
-    
+
     # Versioning
     version_format: str = "{base}-{timestamp}-{hash}"
     max_versions: int = 10
-    
+
     # Rollback
     enable_rollback: bool = True
     rollback_window: int = 5  # Number of versions to keep for rollback
-    
+
     # ONNX export
     export_onnx: bool = True
     onnx_opset: int = 14
-    
+
     # MLflow integration
     use_mlflow: bool = True
     mlflow_tracking_uri: str = "./mlruns"
-    
+
     class Config:
         use_enum_values = True
 
@@ -705,70 +705,70 @@ class QwenOmniConfig(BaseModel):
     """
     # Model configuration
     model: QwenOmniModelConfig = Field(default_factory=QwenOmniModelConfig)
-    
+
     # Training configuration
     training: QwenOmniTrainingConfig = Field(default_factory=QwenOmniTrainingConfig)
-    
+
     # Adapter configuration
     adapters: QwenOmniAdapterConfig = Field(default_factory=QwenOmniAdapterConfig)
-    
+
     # Memory configuration
     memory: QwenOmniMemoryConfig = Field(default_factory=QwenOmniMemoryConfig)
-    
+
     # Drift detection configuration
     drift: QwenOmniDriftConfig = Field(default_factory=QwenOmniDriftConfig)
-    
+
     # Evaluation configuration
     evaluation: QwenOmniEvaluationConfig = Field(default_factory=QwenOmniEvaluationConfig)
-    
+
     # Registry configuration
     registry: QwenOmniRegistryConfig = Field(default_factory=QwenOmniRegistryConfig)
-    
+
     # Project metadata
     project_name: str = "adaptive_qwen_omni"
     experiment_name: str = "default"
     run_id: Optional[str] = None
-    
+
     # Logging
     log_level: str = "INFO"
     log_dir: str = "./logs"
-    
+
     class Config:
         use_enum_values = True
-    
+
     @classmethod
     def from_yaml(cls, path: str) -> "QwenOmniConfig":
         """Load configuration from YAML file."""
         from pathlib import Path
         import yaml
-        
+
         path = Path(path)
         if not path.exists():
             raise FileNotFoundError(f"Configuration file not found: {path}")
-        
+
         with open(path, "r") as f:
             config_dict = yaml.safe_load(f)
-        
+
         return cls(**config_dict)
-    
+
     def to_yaml(self, path: str) -> None:
         """Save configuration to YAML file."""
         from pathlib import Path
         import yaml
-        
+
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         config_dict = self.model_dump(exclude_unset=True)
         with open(path, "w") as f:
             yaml.dump(config_dict, f, default_flow_style=False, sort_keys=False)
-    
+
     def update(self, **kwargs: Any) -> "QwenOmniConfig":
         """Update configuration with new values."""
         config_dict = self.model_dump()
         config_dict.update(kwargs)
         return QwenOmniConfig(**config_dict)
-    
+
     def get_dict(self) -> Dict[str, Any]:
         """Get configuration as dictionary."""
         result = self.model_dump(exclude_unset=True)
@@ -797,16 +797,16 @@ DEFAULT_QWEN_OMNI_CONFIG = QwenOmniConfig()
 def get_qwen_omni_config(config_path: Optional[str] = None) -> QwenOmniConfig:
     """
     Get Qwen Omni configuration from file or use defaults.
-    
+
     Args:
         config_path: Path to YAML configuration file. If None, uses defaults.
-    
+
     Returns:
         QwenOmniConfig instance
     """
     if config_path is None:
         return DEFAULT_QWEN_OMNI_CONFIG
-    
+
     try:
         return QwenOmniConfig.from_yaml(config_path)
     except FileNotFoundError:
