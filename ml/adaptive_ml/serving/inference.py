@@ -55,7 +55,7 @@ class ServerConfig:
 class ModelServer:
     """
     FastAPI-based inference server for Adaptive ML models.
-    
+
     Features:
     - REST API for text prediction
     - Adapter routing based on input
@@ -63,7 +63,7 @@ class ModelServer:
     - Latency tracking
     - Health checks
     - Model version info
-    
+
     Usage:
         server = ModelServer(model, adapter_manager, config)
         server.start()
@@ -79,7 +79,7 @@ class ModelServer:
     ):
         """
         Initialize ModelServer.
-        
+
         Args:
             model: The base model for inference
             adapter_manager: Optional AdapterManager for adapter support
@@ -92,7 +92,7 @@ class ModelServer:
         self.adapter_router = adapter_router
         self.config = config or AdaptiveMLConfig()
         self.server_config = server_config or ServerConfig()
-        
+
         # Device
         self.device = self.config.training.device
         if self.device and self.device != "auto":
@@ -100,46 +100,46 @@ class ModelServer:
                 self.model.to(self.device)
             except Exception as e:
                 pass
-        
+
         # Create FastAPI app
         self.app = FastAPI(
             title="Adaptive ML Inference Server",
             description="REST API for Adaptive ML models with continual learning",
             version="0.1.0",
         )
-        
+
         # Setup routes
         self._setup_routes()
 
     def _setup_routes(self) -> None:
         """Setup FastAPI routes."""
-        
+
         @self.app.post("/predict", response_model=PredictResponse)
         async def predict(request: PredictRequest):
             """Make a prediction with the model."""
             start_time = time.time()
-            
+
             try:
                 # Route to appropriate adapter
                 adapter_id = self._route_request(request)
-                
+
                 # Activate adapter if needed
                 if self.adapter_manager and adapter_id:
                     self.adapter_manager.activate_adapter(adapter_id)
-                
+
                 # Get model
                 model = self.adapter_manager.get_model() if self.adapter_manager else self.model
-                
+
                 # Tokenize input
                 if hasattr(model, "tokenizer"):
                     tokenizer = model.tokenizer
                 else:
                     # Try to get tokenizer from adapter manager
                     tokenizer = None
-                
+
                 # For simplicity, assume text input
                 input_text = request.text
-                
+
                 # Prepare input
                 if tokenizer:
                     inputs = tokenizer(input_text, return_tensors="pt").to(self.device)
@@ -150,17 +150,17 @@ class ModelServer:
                     # In practice, you'd use a proper tokenizer
                     input_ids = torch.tensor([[1, 2, 3]])  # Dummy tokens
                     attention_mask = torch.ones_like(input_ids)
-                
+
                 # Run inference
                 with torch.no_grad():
                     outputs = model(input_ids, attention_mask=attention_mask)
-                
+
                 # Get prediction
                 if isinstance(outputs, torch.Tensor):
                     logits = outputs
                 else:
                     logits = outputs.logits if hasattr(outputs, "logits") else outputs[0]
-                
+
                 # For text generation, use model.generate()
                 if hasattr(model, "generate"):
                     generated_ids = model.generate(
@@ -175,10 +175,10 @@ class ModelServer:
                     # For classification, get predicted class
                     preds = torch.argmax(logits, dim=-1)
                     prediction = str(preds[0].item())
-                
+
                 # Compute latency
                 latency_ms = (time.time() - start_time) * 1000
-                
+
                 # Prepare response
                 response = PredictResponse(
                     text=input_text,
@@ -192,17 +192,17 @@ class ModelServer:
                         "device": self.device,
                     },
                 )
-                
+
                 return response
-                
+
             except Exception as e:
                 raise HTTPException(status_code=500, detail=str(e))
-        
+
         @self.app.get("/health")
         async def health():
             """Health check endpoint."""
             return {"status": "healthy", "model": type(self.model).__name__}
-        
+
         @self.app.get("/info")
         async def info():
             """Get server information."""
@@ -212,7 +212,7 @@ class ModelServer:
                 "adapters": len(self.adapter_manager.adapters) if self.adapter_manager else 0,
                 "active_adapter": self.adapter_manager.active_adapter if self.adapter_manager else None,
             }
-            
+
             # Add adapter info
             if self.adapter_manager:
                 info["adapter_info"] = {
@@ -224,15 +224,15 @@ class ModelServer:
                     }
                     for aid, ainfo in self.adapter_manager.adapter_info.items()
                 }
-            
+
             return info
-        
+
         @self.app.get("/adapters")
         async def list_adapters():
             """List all available adapters."""
             if not self.adapter_manager:
                 return {"adapters": []}
-            
+
             adapters = []
             for aid, info in self.adapter_manager.adapter_info.items():
                 adapters.append({
@@ -242,27 +242,27 @@ class ModelServer:
                     "parameters": info.num_parameters,
                     "active": info.is_active,
                 })
-            
+
             return {"adapters": adapters, "active": self.adapter_manager.active_adapter}
-        
+
         @self.app.post("/adapters/{adapter_id}/activate")
         async def activate_adapter(adapter_id: str):
             """Activate a specific adapter."""
             if not self.adapter_manager:
                 raise HTTPException(status_code=404, detail="Adapter manager not available")
-            
+
             try:
                 self.adapter_manager.activate_adapter(adapter_id)
                 return {"status": "success", "active_adapter": adapter_id}
             except Exception as e:
                 raise HTTPException(status_code=400, detail=str(e))
-        
+
         @self.app.post("/adapters/deactivate")
         async def deactivate_adapters():
             """Deactivate all adapters."""
             if not self.adapter_manager:
                 raise HTTPException(status_code=404, detail="Adapter manager not available")
-            
+
             self.adapter_manager.deactivate_all()
             return {"status": "success", "active_adapter": None}
 
@@ -372,17 +372,17 @@ class ModelServer:
     def _route_request(self, request: PredictRequest) -> Optional[str]:
         """
         Route the request to the appropriate adapter.
-        
+
         Args:
             request: The prediction request
-        
+
         Returns:
             Adapter ID to use, or None for base model
         """
         # Check if adapter is explicitly specified
         if request.adapter_id:
             return request.adapter_id
-        
+
         # Use adapter router if available
         if self.adapter_router:
             metadata = request.metadata or {}
@@ -390,18 +390,18 @@ class ModelServer:
                 metadata["task_id"] = request.task_id
             if request.domain:
                 metadata["domain"] = request.domain
-            
+
             return self.adapter_router.route(request.text, metadata)
-        
+
         # Default to base model
         return None
 
     def start(self) -> None:
         """Start the FastAPI server."""
         import uvicorn
-        
+
         print(f"Starting Adaptive ML Inference Server on {self.server_config.host}:{self.server_config.port}")
-        
+
         uvicorn.run(
             self.app,
             host=self.server_config.host,
@@ -430,7 +430,7 @@ class ModelServer:
 class BatchInferenceServer:
     """
     Server for batch inference on multiple inputs.
-    
+
     Useful for processing large datasets or batch predictions.
     """
 
@@ -442,7 +442,7 @@ class BatchInferenceServer:
     ):
         """
         Initialize BatchInferenceServer.
-        
+
         Args:
             model: The base model for inference
             adapter_manager: Optional AdapterManager for adapter support
@@ -466,27 +466,27 @@ class BatchInferenceServer:
     ) -> List[str]:
         """
         Predict on a batch of texts.
-        
+
         Args:
             texts: List of input texts
             batch_size: Batch size for processing
             adapter_id: Optional adapter ID to use
-        
+
         Returns:
             List of predictions
         """
         # Activate adapter if specified
         if self.adapter_manager and adapter_id:
             self.adapter_manager.activate_adapter(adapter_id)
-        
+
         model = self.adapter_manager.get_model() if self.adapter_manager else self.model
-        
+
         predictions = []
-        
+
         # Process in batches
         for i in range(0, len(texts), batch_size):
             batch_texts = texts[i:i + batch_size]
-            
+
             # Tokenize batch
             if hasattr(model, "tokenizer"):
                 tokenizer = model.tokenizer
@@ -497,11 +497,11 @@ class BatchInferenceServer:
                 # Simple tokenization (for demo)
                 input_ids = torch.tensor([[1, 2, 3] for _ in batch_texts])
                 attention_mask = torch.ones_like(input_ids)
-            
+
             # Run inference
             with torch.no_grad():
                 outputs = model(input_ids, attention_mask=attention_mask)
-            
+
             # Get predictions
             if hasattr(model, "generate"):
                 generated_ids = model.generate(
@@ -515,9 +515,9 @@ class BatchInferenceServer:
                 logits = outputs.logits if hasattr(outputs, "logits") else outputs[0]
                 preds = torch.argmax(logits, dim=-1)
                 batch_predictions = [str(p.item()) for p in preds]
-            
+
             predictions.extend(batch_predictions)
-        
+
         return predictions
 
     def __repr__(self) -> str:

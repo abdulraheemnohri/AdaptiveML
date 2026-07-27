@@ -45,7 +45,7 @@ class RegistryStats:
 class ModelRegistry:
     """
     Manages model versions for continual learning.
-    
+
     Features:
     - Versioned model storage
     - Atomic promotion and rollback
@@ -53,19 +53,19 @@ class ModelRegistry:
     - ONNX export support
     - Metadata tracking
     - Model loading and unloading
-    
+
     Usage:
         registry = ModelRegistry(config)
-        
+
         # Save a model version
         registry.save_version("v1.0.0", model, metadata={"accuracy": 0.95})
-        
+
         # Load a model version
         model = registry.load_version("v1.0.0")
-        
+
         # Promote a version
         registry.promote("v1.1.0")
-        
+
         # Rollback to previous version
         registry.rollback()
     """
@@ -77,7 +77,7 @@ class ModelRegistry:
     ):
         """
         Initialize ModelRegistry.
-        
+
         Args:
             config: AdaptiveMLConfig instance
             registry_path: Path to the registry directory (defaults to config)
@@ -90,15 +90,15 @@ class ModelRegistry:
         self.auto_archive = self.config.registry.auto_archive
         self.export_onnx = self.config.registry.export_onnx
         self.onnx_opset = self.config.registry.onnx_opset
-        
+
         # Initialize registry
         self.registry_path.mkdir(parents=True, exist_ok=True)
-        
+
         # Version tracking
         self.versions: Dict[str, ModelVersion] = {}
         self.current_version: Optional[str] = None
         self.version_order: List[str] = []
-        
+
         # Load existing versions
         self._load_versions()
 
@@ -109,7 +109,7 @@ class ModelRegistry:
         if versions_file.exists():
             with open(versions_file, "r") as f:
                 versions_data = json.load(f)
-            
+
             for version, data in versions_data.items():
                 model_version = ModelVersion(
                     version=version,
@@ -123,7 +123,7 @@ class ModelRegistry:
                 )
                 self.versions[version] = model_version
                 self.version_order.append(version)
-            
+
             # Set current version
             if "current_version" in versions_data:
                 self.current_version = versions_data["current_version"]
@@ -141,9 +141,9 @@ class ModelRegistry:
                 "parameters": model_version.parameters,
                 "status": model_version.status,
             }
-        
+
         versions_data["current_version"] = self.current_version
-        
+
         with open(self.registry_path / "versions.json", "w") as f:
             json.dump(versions_data, f, indent=2)
 
@@ -156,34 +156,34 @@ class ModelRegistry:
     ) -> ModelVersion:
         """
         Save a model as a new version.
-        
+
         Args:
             version: Version identifier (e.g., "v1.0.0")
             model: The model to save
             metadata: Optional metadata to store with the version
             export_onnx: Whether to export to ONNX (defaults to config)
-        
+
         Returns:
             ModelVersion with information about the saved version
         """
         # Create version directory
         version_path = self.registry_path / version
         version_path.mkdir(parents=True, exist_ok=True)
-        
+
         # Save model
         model_path = version_path / "model.pt"
         torch.save(model.state_dict(), model_path)
-        
+
         # Save config
         config_path = version_path / "config.json"
         model_config = model.config if hasattr(model, "config") else {}
         with open(config_path, "w") as f:
             json.dump(model_config, f, indent=2)
-        
+
         # Export to ONNX if enabled
         if export_onnx is None:
             export_onnx = self.export_onnx
-        
+
         onnx_path = None
         if export_onnx:
             try:
@@ -201,15 +201,15 @@ class ModelRegistry:
             except Exception as e:
                 print(f"Warning: Failed to export to ONNX: {e}")
                 onnx_path = None
-        
+
         # Get model size
         size_bytes = os.path.getsize(model_path)
         if onnx_path and onnx_path.exists():
             size_bytes += os.path.getsize(onnx_path)
-        
+
         # Count parameters
         parameters = sum(p.numel() for p in model.parameters())
-        
+
         # Create ModelVersion
         model_version = ModelVersion(
             version=version,
@@ -221,23 +221,23 @@ class ModelRegistry:
             parameters=parameters,
             status="active",
         )
-        
+
         # Add to versions
         self.versions[version] = model_version
         if version not in self.version_order:
             self.version_order.append(version)
-        
+
         # Set as current version if this is the first version
         if self.current_version is None:
             self.current_version = version
-        
+
         # Save versions
         self._save_versions()
-        
+
         # Auto-archive if needed
         if self.auto_archive and len(self.versions) > self.max_versions:
             self._archive_old_versions()
-        
+
         return model_version
 
     def load_version(
@@ -248,20 +248,20 @@ class ModelRegistry:
     ) -> nn.Module:
         """
         Load a model version.
-        
+
         Args:
             version: Version identifier
             model_class: Optional model class to instantiate
             device: Device to load the model on
-        
+
         Returns:
             The loaded model
         """
         if version not in self.versions:
             raise ValueError(f"Version {version} not found in registry")
-        
+
         model_version = self.versions[version]
-        
+
         # Load model
         if model_class is not None:
             # Create model instance
@@ -272,24 +272,24 @@ class ModelRegistry:
         else:
             # Try to load state dict directly
             state_dict = torch.load(model_version.model_path)
-            
+
             # Try to reconstruct model from config
             config_path = Path(model_version.config_path)
             if config_path.exists():
                 with open(config_path, "r") as f:
                     config = json.load(f)
-                
+
                 # This is a simplified approach; in practice, you'd need to
                 # know the model class to properly reconstruct it
                 model = nn.Module()
                 model.load_state_dict(state_dict)
             else:
                 raise ValueError(f"Cannot load model without model_class or config")
-        
+
         # Move to device
         if device is not None:
             model.to(device)
-        
+
         return model
 
     def promote(
@@ -299,40 +299,40 @@ class ModelRegistry:
     ) -> bool:
         """
         Promote a version to be the current version.
-        
+
         Args:
             version: Version identifier to promote
             metadata: Optional metadata to update
-        
+
         Returns:
             True if promotion was successful
         """
         if version not in self.versions:
             return False
-        
+
         # Update current version
         if self.current_version is not None:
             self.versions[self.current_version].status = "archived"
-        
+
         self.current_version = version
         self.versions[version].status = "active"
-        
+
         # Update metadata
         if metadata:
             self.versions[version].metadata.update(metadata)
-        
+
         # Save versions
         self._save_versions()
-        
+
         return True
 
     def rollback(self, version: Optional[str] = None) -> bool:
         """
         Rollback to a previous version.
-        
+
         Args:
             version: Version to rollback to (defaults to previous version)
-        
+
         Returns:
             True if rollback was successful
         """
@@ -346,59 +346,59 @@ class ModelRegistry:
                     return False
             else:
                 return False
-        
+
         if version not in self.versions:
             return False
-        
+
         # Promote the target version
         return self.promote(version)
 
     def delete_version(self, version: str) -> bool:
         """
         Delete a version from the registry.
-        
+
         Args:
             version: Version identifier to delete
-        
+
         Returns:
             True if deletion was successful
         """
         if version not in self.versions:
             return False
-        
+
         # Remove from versions
         del self.versions[version]
         self.version_order.remove(version)
-        
+
         # Delete files
         version_path = self.registry_path / version
         if version_path.exists():
             shutil.rmtree(version_path)
-        
+
         # Update current version if needed
         if self.current_version == version:
             self.current_version = None
             if self.version_order:
                 self.current_version = self.version_order[-1]
-        
+
         # Save versions
         self._save_versions()
-        
+
         return True
 
     def archive_version(self, version: str) -> bool:
         """
         Archive a version (mark as archived but keep files).
-        
+
         Args:
             version: Version identifier to archive
-        
+
         Returns:
             True if archiving was successful
         """
         if version not in self.versions:
             return False
-        
+
         self.versions[version].status = "archived"
         self._save_versions()
         return True
@@ -420,7 +420,7 @@ class ModelRegistry:
         else:
             # Default to a reasonable shape
             shape = (1, 512)  # Batch size 1, sequence length 512
-        
+
         return torch.randn(shape)
 
     def get_version(self, version: str) -> Optional[ModelVersion]:
@@ -442,7 +442,7 @@ class ModelRegistry:
     def get_stats(self) -> RegistryStats:
         """Get registry statistics."""
         total_size = sum(v.size_bytes for v in self.versions.values())
-        
+
         return RegistryStats(
             num_versions=len(self.versions),
             current_version=self.current_version,
@@ -455,11 +455,11 @@ class ModelRegistry:
         """Clear all versions from the registry."""
         for version in list(self.versions.keys()):
             self.delete_version(version)
-        
+
         self.versions = {}
         self.version_order = []
         self.current_version = None
-        
+
         # Remove versions.json
         versions_file = self.registry_path / "versions.json"
         if versions_file.exists():
