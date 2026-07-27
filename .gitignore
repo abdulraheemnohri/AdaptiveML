@@ -1,48 +1,13 @@
-```
-# Dependencies
-node_modules/
-venv/
-.venv/
-__pycache__/
-*.egg-info/
-.pytest_cache/
-.mypy_cache/
+# Adaptive Omni ML Platform - Git Ignore
 
-# Build artifacts
-dist/
-build/
-target/
-*.pyc
-*.class
-*.o
-*.obj
-*.so
-*.dll
-*.exe
-
-# Environment
-.env
-.env.local
-*.env.*
-
-# Editors
-.vscode/
-.idea/
-*.swp
-*.swo
-*.tmp
-
-# Logs
-*.log
-
-# OS
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
 
 # Python
 __pycache__/
@@ -66,29 +31,73 @@ wheels/
 .installed.cfg
 *.egg
 
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+adaptive_omni.db
+
+# Logs
+*.log
+logs/
+
+# Models
+models/
+*.bin
+*.pth
+*.pt
+*.safetensors
+*.h5
+*.tflite
+*.onnx
+
+# Training output
+training_output/
+
+# Data storage
+data/
+
 # Node.js
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-node_modules/
+
+# Frontend build
 dist/
 build/
-.nyc_output
-coverage/
-.nyc_output/
-coverage/
+.cache/
 
-# TypeScript/JavaScript
-*.tsbuildinfo
-*.js.map
-*.jsx.map
-*.ts.map
-*.tsx.map
+# Environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
 
-# Vite
-.vite/
-
-# PostCSS
-.postcss-cache/
-```
+# Temporary files
+*.tmp
+*.temp
+.cache

@@ -1,12 +1,8 @@
-export function TestingLabPage() {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Testing Lab</h1>
-      </div>
-      <div className="rounded-lg border bg-card p-8 text-center">
-        <p className="text-muted-foreground">Testing Lab page - Coming soon</p>
-      </div>
-    </div>
-  )
+import PlaceholderPage from './PlaceholderPage'
+import { BarChart3 } from 'lucide-react'
+
+function TestingLabPage() {
+  return <PlaceholderPage title="Testing Lab" description="Comprehensive model testing and evaluation center" icon={<BarChart3 className="h-10 w-10" />} />
 }
+
+export default TestingLabPage

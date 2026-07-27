@@ -1,12 +1,8 @@
-export function SettingsPage() {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-      </div>
-      <div className="rounded-lg border bg-card p-8 text-center">
-        <p className="text-muted-foreground">Settings page - Coming soon</p>
-      </div>
-    </div>
-  )
+import PlaceholderPage from './PlaceholderPage'
+import { Settings as SettingsIcon } from 'lucide-react'
+
+function SettingsPage() {
+  return <PlaceholderPage title="Settings" description="Configure platform settings and preferences" icon={<SettingsIcon className="h-10 w-10" />} />
 }
+
+export default SettingsPage
