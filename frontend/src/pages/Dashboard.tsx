@@ -65,6 +65,22 @@ interface SystemAlert {
   timestamp: string;
 }
 
+interface RoutingRule {
+  id: string;
+  trigger: string;
+  target: string;
+  priority: number;
+}
+
+interface GraphFact {
+  id: string;
+  entityA: string;
+  relation: string;
+  entityB: string;
+  confidence: string;
+  source: string;
+}
+
 export const Dashboard: React.FC = () => {
   // 10 Tabs spanning all 48 specification sections
   const [activeTab, setActiveTab] = useState<string>('control');
@@ -121,6 +137,16 @@ export const Dashboard: React.FC = () => {
   const [chunkOverlap, setChunkOverlap] = useState(64);
   const [chunkText, setChunkText] = useState("The Qwen2.5-Omni-3B model utilizes a highly integrated Thinker-Talker architecture. It supports speech recognition, spatial-temporal video reasoning, visual document scanning, and continual task routing using elastic weights regularization to fully isolate skill adapters.");
 
+  // Section 10: Knowledge Graph Facts
+  const [graphFacts, setGraphFacts] = useState<GraphFact[]>([
+    { id: "gf-1", entityA: "Qwen2.5-Omni-3B", relation: "supports", entityB: "Speech Synthesis", confidence: "99.1%", source: "Model Spec Sheet" },
+    { id: "gf-2", entityA: "Urdu Language Adapter", relation: "retains", entityB: "98.9% Dialects", confidence: "98.4%", source: "Urdu Eval Suite" },
+    { id: "gf-3", entityA: "Elastic Weights", relation: "protects", entityB: "Base Parameters", confidence: "95.0%", source: "EWC Regulariser" }
+  ]);
+  const [newEntityA, setNewEntityA] = useState("");
+  const [newRelation, setNewRelation] = useState("");
+  const [newEntityB, setNewEntityB] = useState("");
+
   // Tab 4: Ingestion & Pipeline
   const [sources, setSources] = useState<DataSource[]>([]);
   const [newSourceName, setNewSourceName] = useState("");
@@ -144,12 +170,28 @@ export const Dashboard: React.FC = () => {
   const [newGapConfidence, setNewGapConfidence] = useState("low");
   const [agents, setAgents] = useState<AutonomousAgent[]>([]);
 
-  // Tab 7: Continual Training Lab
+  // Tab 7: Continual Training Lab (Premium State)
   const [lr, setLr] = useState(2e-5);
   const [epochs, setEpochs] = useState(3);
   const [replayRatio, setReplayRatio] = useState(0.3);
   const [distillAlpha, setDistillAlpha] = useState(0.5);
   const [ewcWeight, setEwcWeight] = useState(1000.0);
+
+  // Section 16: Adapter Router Rules
+  const [routingRules, setRoutingRules] = useState<RoutingRule[]>([
+    { id: "rr-1", trigger: "text matches *urdu*", target: "Urdu Skill Adapter", priority: 1 },
+    { id: "rr-2", trigger: "text matches *code* or *python*", target: "Python Coding Adapter", priority: 2 }
+  ]);
+  const [newRuleTrigger, setNewRuleTrigger] = useState("");
+  const [newRuleTarget, setNewRuleTarget] = useState("Urdu Skill Adapter");
+
+  // Section 12: Curriculum learning stages
+  const [curriculumStages, setCurriculumStages] = useState([
+    { step: 1, title: "Multilingual Dialects Vocabulary", status: "completed" },
+    { step: 2, title: "General Logic & Code Synthesis", status: "completed" },
+    { step: 3, title: "Visual Document Layout Understanding", status: "active" },
+    { step: 4, title: "Audio & Speech Conversational Transcripts", status: "queued" }
+  ]);
 
   // Tab 8: Registry & Promotion
   const [promotionGates, setPromotionGates] = useState({
@@ -160,12 +202,17 @@ export const Dashboard: React.FC = () => {
     humanApproval: false
   });
 
-  // Tab 10: Observability & Alerts
+  // Tab 10: Observability, Alerts & Audit System (Section 35)
   const [alerts, setAlerts] = useState<SystemAlert[]>([]);
   const [cpu, setCpu] = useState(42);
   const [gpu, setGpu] = useState(78);
   const [vram, setVram] = useState(16.4);
   const [ram, setRam] = useState(24.2);
+  const [auditLogs, setAuditLogs] = useState([
+    { id: "a-1", action: "Model Version Promoted", user: "Owner (Admin)", timestamp: "2025-02-23T11:00:00Z" },
+    { id: "a-2", action: "Urdu Sitemap source added", user: "Researcher", timestamp: "2025-02-23T11:15:00Z" },
+    { id: "a-3", action: "Rollback triggered to stable checkpoint", user: "ML Engineer", timestamp: "2025-02-23T11:45:00Z" }
+  ]);
 
   // V3 Brain Evolution settings (Section 46)
   const [evolutionSettings, setEvolutionSettings] = useState({
@@ -429,6 +476,25 @@ export const Dashboard: React.FC = () => {
     } catch (e) {}
   };
 
+  // Section 10: Knowledge Graph adding facts
+  const handleAddFact = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEntityA.trim() || !newRelation.trim() || !newEntityB.trim()) return;
+
+    const newFact: GraphFact = {
+      id: `gf-${Date.now()}`,
+      entityA: newEntityA,
+      relation: newRelation,
+      entityB: newEntityB,
+      confidence: "95.0%",
+      source: "Manual Graph Entry"
+    };
+    setGraphFacts(prev => [...prev, newFact]);
+    setNewEntityA("");
+    setNewRelation("");
+    setNewEntityB("");
+  };
+
   // Tab 4: Ingestion Actions (Section 3)
   const handleAddSource = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -499,6 +565,21 @@ export const Dashboard: React.FC = () => {
     } catch (e) {}
   };
 
+  // Section 16: Adding Adapter Router Rules
+  const handleAddRouterRule = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRuleTrigger.trim()) return;
+
+    const newRule: RoutingRule = {
+      id: `rr-${Date.now()}`,
+      trigger: newRuleTrigger,
+      target: newRuleTarget,
+      priority: routingRules.length + 1
+    };
+    setRoutingRules(prev => [...prev, newRule]);
+    setNewRuleTrigger("");
+  };
+
   // Tab 10: Clear Alerts (Section 44)
   const handleClearAlerts = async () => {
     setAlerts([]);
@@ -535,7 +616,7 @@ export const Dashboard: React.FC = () => {
   ];
 
   return (
-    <div className="flex h-screen bg-slate-950 font-sans overflow-hidden">
+    <div className="flex h-screen bg-slate-950 font-sans overflow-hidden text-slate-100">
 
       {/* SIDEBAR NAVIGATION */}
       <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col h-full flex-shrink-0">
@@ -566,7 +647,7 @@ export const Dashboard: React.FC = () => {
       </aside>
 
       {/* MAIN VIEWPORT */}
-      <main className="flex-grow flex flex-col min-w-0 bg-slate-950 overflow-y-auto p-8 text-slate-200">
+      <main className="flex-grow flex flex-col min-w-0 bg-slate-950 overflow-y-auto p-8">
 
         {/* TAB 1: COMMAND CENTER */}
         {activeTab === 'control' && (
@@ -577,7 +658,7 @@ export const Dashboard: React.FC = () => {
                   <h1 className="text-2xl font-black tracking-tight">Adaptive Brain Control</h1>
                   <p className="text-xs text-indigo-300 mt-1">Central command and master evolutionary settings of Qwen2.5-Omni-3B.</p>
                 </div>
-                <span className="mt-4 md:mt-0 bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 px-4 py-1.5 rounded-full text-xs font-bold tracking-wide animate-pulse">
+                <span className="mt-4 md:mt-0 bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 px-4 py-1.5 rounded-full text-xs font-bold tracking-wide">
                   STATUS: {state.status}
                 </span>
               </div>
@@ -668,22 +749,57 @@ export const Dashboard: React.FC = () => {
           </div>
         )}
 
-        {/* TAB 3: MEMORY & RAG */}
+        {/* TAB 3: MEMORY & RAG (Section 9, 10, 11) */}
         {activeTab === 'memory' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fadeIn">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fadeIn text-xs">
+            {/* MEMORY MANAGER */}
             <div className="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
               <h2 className="text-sm font-black text-slate-400 uppercase tracking-wider border-b border-slate-850 pb-3">Long-Term Memory Console</h2>
               <form onSubmit={handleAddMemory} className="flex space-x-2">
-                <input type="text" value={newMemoryText} onChange={e => setNewMemoryText(e.target.value)} placeholder="Type new memory..." className="flex-grow p-2 bg-slate-950 border border-slate-800 rounded text-xs focus:outline-none" />
+                <input type="text" value={newMemoryText} onChange={e => setNewMemoryText(e.target.value)} placeholder="Type new memory..." className="flex-grow p-2 bg-slate-950 border border-slate-800 rounded text-xs focus:outline-none text-white" />
                 <button type="submit" className="bg-indigo-600 text-white px-4 rounded text-xs font-bold">Add</button>
               </form>
-              <div className="space-y-2 h-[300px] overflow-y-auto">
+              <div className="space-y-2 h-[200px] overflow-y-auto">
                 {memories.map(mem => (
                   <div key={mem.id} className="p-3 bg-slate-950 rounded-xl border border-slate-850 flex justify-between items-center text-xs">
                     <span className="text-slate-300 font-semibold">{mem.content}</span>
                     <button onClick={() => deleteMemory(mem.id)} className="text-red-400 hover:underline">Delete</button>
                   </div>
                 ))}
+              </div>
+
+              {/* PREMIUM KNOWLEDGE GRAPH FACT WRITER (Section 10) */}
+              <div className="border-t border-slate-850 pt-5 space-y-3">
+                <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider block">🕸️ Knowledge Graph Relations Visualiser</span>
+                <form onSubmit={handleAddFact} className="grid grid-cols-3 gap-2">
+                  <input type="text" placeholder="Entity A" value={newEntityA} onChange={e => setNewEntityA(e.target.value)} className="p-2 bg-slate-950 border border-slate-800 rounded text-[10px] text-white focus:outline-none" />
+                  <input type="text" placeholder="Relation" value={newRelation} onChange={e => setNewRelation(e.target.value)} className="p-2 bg-slate-950 border border-slate-800 rounded text-[10px] text-white focus:outline-none" />
+                  <input type="text" placeholder="Entity B" value={newEntityB} onChange={e => setNewEntityB(e.target.value)} className="p-2 bg-slate-950 border border-slate-800 rounded text-[10px] text-white focus:outline-none" />
+                  <button type="submit" className="col-span-3 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold p-2 rounded">Add Entity Relationship Fact</button>
+                </form>
+
+                <div className="overflow-x-auto pt-2 max-h-36 overflow-y-auto">
+                  <table className="w-full text-left text-[9px] text-slate-400 font-mono">
+                    <thead className="text-[8px] text-slate-500 uppercase border-b border-slate-850">
+                      <tr>
+                        <th className="py-1">Entity A</th>
+                        <th className="py-1">Relation</th>
+                        <th className="py-1">Entity B</th>
+                        <th className="py-1">Trust</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {graphFacts.map(fact => (
+                        <tr key={fact.id} className="border-b border-slate-850/50">
+                          <td className="py-1.5 font-bold text-slate-300">{fact.entityA}</td>
+                          <td className="py-1.5 text-indigo-400">{fact.relation}</td>
+                          <td className="py-1.5 text-slate-300">{fact.entityB}</td>
+                          <td className="py-1.5 text-emerald-400 font-bold">{fact.confidence}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
 
@@ -750,7 +866,6 @@ export const Dashboard: React.FC = () => {
             <h2 className="text-sm font-black text-slate-400 uppercase tracking-wider border-b border-slate-850 pb-3">Quality Assurance</h2>
 
             <div className="grid grid-cols-2 gap-6">
-              {/* QUARANTINE */}
               <div className="space-y-3">
                 <span className="text-slate-400 font-bold block">Low-Quality & Safety Quarantine</span>
                 <div className="space-y-2">
@@ -763,7 +878,6 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* PREMIUM CONTRADICTION RESOLVER */}
               <div className="space-y-3">
                 <span className="text-slate-400 font-bold block">Contradiction & Conflict Resolver (Premium Feature)</span>
                 <div className="space-y-2">
@@ -813,19 +927,85 @@ export const Dashboard: React.FC = () => {
           </div>
         )}
 
-        {/* TAB 7: CONTINUAL TRAINING */}
+        {/* TAB 7: CONTINUAL TRAINING (Section 12, 16, 18) */}
         {activeTab === 'training' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fadeIn text-xs">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-              <h2 className="text-sm font-black text-slate-400 uppercase tracking-wider">Continual Learning Parameters</h2>
-              <div>
-                <div className="flex justify-between font-bold">
-                  <span>EWC Lambda</span>
-                  <span>{ewcWeight}</span>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fadeIn text-xs">
+
+            {/* CONTINUAL LEARNING CONTROLLER */}
+            <div className="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+              <h2 className="text-sm font-black text-slate-400 uppercase tracking-wider border-b border-slate-850 pb-3">Continual Learning Parameters</h2>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between font-bold">
+                    <span>EWC Lambda Regulariser</span>
+                    <span>{ewcWeight}</span>
+                  </div>
+                  <input type="range" min="100" max="5000" step="100" value={ewcWeight} onChange={e => setEwcWeight(Number(e.target.value))} className="w-full" />
                 </div>
-                <input type="range" min="100" max="5000" step="100" value={ewcWeight} onChange={e => setEwcWeight(Number(e.target.value))} className="w-full" />
+
+                {/* ADAPTER ROUTER RULES (Section 16) */}
+                <div className="border-t border-slate-850 pt-4 space-y-3">
+                  <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider block">🔌 Dynamic Adapter Router Rules (Section 16)</span>
+                  <form onSubmit={handleAddRouterRule} className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <input type="text" placeholder="Trigger e.g. *urdu*" value={newRuleTrigger} onChange={e => setNewRuleTrigger(e.target.value)} className="p-2 col-span-2 bg-slate-950 border border-slate-800 rounded text-[10px] text-white focus:outline-none" />
+                    <select value={newRuleTarget} onChange={e => setNewRuleTarget(e.target.value)} className="p-2 bg-slate-950 border border-slate-800 rounded text-[10px] text-slate-300 font-bold focus:outline-none">
+                      <option>Urdu Skill Adapter</option>
+                      <option>Python Coding Adapter</option>
+                    </select>
+                    <button type="submit" className="col-span-3 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold p-2 rounded">Register Router Rule</button>
+                  </form>
+
+                  <div className="overflow-x-auto pt-2 max-h-36 overflow-y-auto">
+                    <table className="w-full text-left text-[9px] text-slate-400 font-mono">
+                      <thead className="text-[8px] text-slate-500 uppercase border-b border-slate-850">
+                        <tr>
+                          <th className="py-1">Priority</th>
+                          <th className="py-1">Condition Trigger</th>
+                          <th className="py-1">Target Adapter</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {routingRules.map(rule => (
+                          <tr key={rule.id} className="border-b border-slate-850/50">
+                            <td className="py-1.5 font-bold text-slate-300">{rule.priority}</td>
+                            <td className="py-1.5 text-indigo-400">{rule.trigger}</td>
+                            <td className="py-1.5 text-slate-300">{rule.target}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
+
+            {/* CURRICULUM STAGES (Section 12) */}
+            <div className="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+              <h2 className="text-sm font-black text-slate-400 uppercase tracking-wider border-b border-slate-850 pb-3">Active Curriculum Learning Path (Section 12)</h2>
+              <div className="space-y-3">
+                {curriculumStages.map(stage => (
+                  <div key={stage.step} className="p-3 bg-slate-950 rounded-xl border border-slate-850 flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <span className={`h-6 w-6 rounded-full flex items-center justify-center font-bold text-xs ${
+                        stage.status === 'completed' ? 'bg-emerald-950 text-emerald-400' :
+                        stage.status === 'active' ? 'bg-indigo-950 text-indigo-400 animate-pulse' :
+                        'bg-slate-800 text-slate-500'
+                      }`}>
+                        {stage.step}
+                      </span>
+                      <span className="font-bold text-slate-200">{stage.title}</span>
+                    </div>
+                    <span className={`text-[10px] font-bold uppercase ${
+                      stage.status === 'completed' ? 'text-emerald-400' :
+                      stage.status === 'active' ? 'text-indigo-400' : 'text-slate-500'
+                    }`}>
+                      {stage.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
         )}
 
@@ -845,20 +1025,58 @@ export const Dashboard: React.FC = () => {
           </div>
         )}
 
-        {/* TAB 10: OBSERVABILITY */}
+        {/* TAB 10: OBSERVABILITY & AUDIT SYSTEM (SECTION 35) */}
         {activeTab === 'observability' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fadeIn text-xs">
-            <div className="lg:col-span-8 bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
-              <h2 className="text-sm font-black text-slate-400 uppercase tracking-wider">Observability</h2>
+            {/* HARDWARE */}
+            <div className="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
+              <h2 className="text-sm font-black text-slate-400 uppercase tracking-wider border-b border-slate-850 pb-3">Observability</h2>
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-slate-950 p-4 rounded-xl border border-slate-850">
-                  <span className="text-slate-500 font-bold block">CPU</span>
+                  <span className="text-slate-500 font-bold block">CPU Usage</span>
                   <span className="text-lg font-black text-indigo-400 mt-1 block">{cpu}%</span>
                 </div>
                 <div className="bg-slate-950 p-4 rounded-xl border border-slate-850">
-                  <span className="text-slate-500 font-bold block">GPU</span>
+                  <span className="text-slate-500 font-bold block">GPU Load</span>
                   <span className="text-lg font-black text-teal-400 mt-1 block">{gpu}%</span>
                 </div>
+              </div>
+
+              {/* AUDIT SYSTEM (Section 35) */}
+              <div className="pt-5 border-t border-slate-850 space-y-3">
+                <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider block">📜 Audit Log Stream (Section 35)</span>
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {auditLogs.map(log => (
+                    <div key={log.id} className="p-3 bg-slate-950 border border-slate-850 rounded-lg flex justify-between items-center text-[10px] font-mono">
+                      <div>
+                        <p className="font-bold text-slate-300">{log.action}</p>
+                        <p className="text-slate-500 mt-0.5">Executor: {log.user}</p>
+                      </div>
+                      <span className="text-slate-500">{new Date(log.timestamp).toLocaleTimeString()}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* ALERTS */}
+            <div className="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
+              <div className="flex justify-between items-center border-b border-slate-850 pb-3">
+                <h3 className="text-sm font-black text-slate-400 uppercase tracking-wider">Live System Alerts</h3>
+                <button onClick={handleClearAlerts} className="text-[10px] text-red-400 font-bold hover:underline">Clear</button>
+              </div>
+              <div className="space-y-3">
+                {alerts.length === 0 ? (
+                  <p className="text-slate-500 italic text-center py-4">No active warnings or alerts.</p>
+                ) : (
+                  alerts.map(alert => (
+                    <div key={alert.id} className={`p-3 rounded-xl border ${
+                      alert.type === 'warning' ? 'bg-amber-950/40 border-amber-800/50 text-amber-200' : 'bg-slate-950 border-slate-850 text-slate-300'
+                    }`}>
+                      <p className="font-bold">{alert.message}</p>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
