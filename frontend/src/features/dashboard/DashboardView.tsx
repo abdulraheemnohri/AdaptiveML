@@ -1,6 +1,6 @@
 import React from 'react';
-import { Dashboard } from '../../pages/Dashboard';
+import { DashboardPage } from '../../pages/Dashboard';
 
 export const DashboardView: React.FC = () => {
-  return <Dashboard />;
+  return <DashboardPage />;
 };

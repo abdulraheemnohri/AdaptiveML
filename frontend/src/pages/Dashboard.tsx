@@ -23,7 +23,7 @@ interface SystemState {
   status: string;
 }
 
-export const Dashboard: React.FC = () => {
+export const DashboardPage: React.FC = () => {
   // Tab layout spanning all 48 sections
   const [activeTab, setActiveTab] = useState<string>('control');
 
