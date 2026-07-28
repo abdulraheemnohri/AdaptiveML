@@ -1,0 +1,160 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "adaptive-omni-ml"
+version = "0.1.0"
+description = "Adaptive Machine Learning and AI Orchestration Platform with Continuous Learning and Zero Catastrophic Forgetting"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Adaptive Omni ML Team"}
+]
+keywords = [
+    "machine-learning",
+    "deep-learning",
+    "nlp",
+    "multimodal",
+    "continual-learning",
+    "llm",
+    "qwen",
+    "ai-orchestration"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    # Core ML & Deep Learning
+    "torch>=2.1.0",
+    "torchvision>=0.16.0",
+    "torchaudio>=2.1.0",
+    "transformers>=4.36.0",
+    "accelerate>=0.25.0",
+    "bitsandbytes>=0.41.0",
+    "peft>=0.7.0",
+    "trl>=0.7.0",
+    
+    # Datasets & Data Processing
+    "datasets>=2.14.0",
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "pyarrow>=14.0.0",
+    
+    # Tokenization & Processing
+    "tokenizers>=0.15.0",
+    "sentencepiece>=0.1.99",
+    
+    # Evaluation
+    "evaluate>=0.4.1",
+    "scikit-learn>=1.3.0",
+    "rouge-score>=0.1.2",
+    "bert-score>=0.3.13",
+    
+    # API & Web Framework
+    "fastapi>=0.108.0",
+    "uvicorn[standard]>=0.25.0",
+    "python-multipart>=0.0.6",
+    "websockets>=12.0",
+    "sse-starlette>=1.8.0",
+    
+    # Database
+    "sqlalchemy>=2.0.0",
+    "alembic>=1.13.0",
+    "aiosqlite>=0.19.0",
+    
+    # Configuration & Environment
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "python-dotenv>=1.0.0",
+    
+    # Logging & Monitoring
+    "loguru>=0.7.0",
+    "prometheus-client>=0.19.0",
+    
+    # Task Queue & Workers
+    "celery>=5.3.0",
+    "redis>=5.0.0",
+    
+    # Security
+    "cryptography>=41.0.0",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    
+    # HTTP Client
+    "httpx>=0.26.0",
+    "aiohttp>=3.9.0",
+    
+    # File Processing
+    "beautifulsoup4>=4.12.0",
+    "lxml>=4.9.0",
+    "pdfplumber>=0.10.0",
+    "python-docx>=1.1.0",
+    "openpyxl>=3.1.0",
+    
+    # Utilities
+    "tqdm>=4.66.0",
+    "rich>=13.7.0",
+    "click>=8.1.0",
+    "pyyaml>=6.0.0",
+    "orjson>=3.9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.12.0",
+    "ruff>=0.1.0",
+    "mypy>=1.8.0",
+    "pre-commit>=3.6.0",
+]
+
+gpu = [
+    "nvidia-cuda-runtime-cu12>=12.1.0",
+    "nvidia-cudnn-cu12>=8.9.0",
+]
+
+all = [
+    "adaptive-omni-ml[dev,gpu]"
+]
+
+[project.scripts]
+adaptive-omni = "backend.app.main:cli"
+train = "scripts.train:main"
+evaluate = "scripts.evaluate:main"
+serve = "scripts.serve:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["backend*", "scripts*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["backend/tests"]
+addopts = "-v --cov=backend --cov-report=term-missing"
