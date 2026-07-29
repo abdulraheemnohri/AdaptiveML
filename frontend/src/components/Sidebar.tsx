@@ -31,10 +31,12 @@ const navigation = {
   ],
 };
 
+import { useAppStore } from '@/stores/appStore';
+
 export const Sidebar: React.FC = () => {
   const location = useLocation();
   const { currentMode, setCurrentMode, sidebarCollapsed, setSidebarCollapsed } = 
-    require('@/stores/appStore').useAppStore();
+    useAppStore();
 
   const isActive = (href: string) => {
     return location.pathname === href || location.pathname.startsWith(href + '/');

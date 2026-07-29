@@ -20,6 +20,7 @@ export const useWebSocket = (url: string) => {
           title: 'Connected',
           message: 'Real-time updates enabled',
           type: 'success',
+          timestamp: new Date().toISOString(),
         });
       };
 
@@ -34,6 +35,7 @@ export const useWebSocket = (url: string) => {
           title: 'Connection Error',
           message: 'WebSocket connection failed',
           type: 'error',
+          timestamp: new Date().toISOString(),
         });
       };
     } catch (error) {
